@@ -227,11 +227,11 @@ async def refresh_index(ticker: str, session: AsyncSession) -> None:
                 "computed_at": now,
             }
         )
-    # Aggregate signal (indicator_id=None)
+    # Aggregate signal (sentinel value instead of NULL for upsert compatibility)
     signal_rows.append(
         {
             "ticker": ticker,
-            "indicator_id": None,
+            "indicator_id": "_aggregate",
             "signal": aggregate,
             "computed_at": now,
         }

@@ -88,7 +88,7 @@ class SignalData(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     ticker: Mapped[str] = mapped_column(String(20), index=True)
-    indicator_id: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    indicator_id: Mapped[str] = mapped_column(String(20))  # "_aggregate" for aggregate
     signal: Mapped[str] = mapped_column(String(10))
     computed_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=lambda: datetime.now(UTC)

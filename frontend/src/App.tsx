@@ -7,6 +7,7 @@ import IndicesPage from "./pages/IndicesPage";
 import FundsPage from "./pages/FundsPage";
 import IndexDetailPage from "./pages/IndexDetailPage";
 import FundDetailPage from "./pages/FundDetailPage";
+import UpdateTracker from "./components/UpdateTracker";
 
 function App() {
   const { t, i18n } = useTranslation();
@@ -42,6 +43,7 @@ function App() {
             <Route path="/funds/:ticker" element={<FundDetailPage />} />
           </Routes>
         </main>
+        <UpdateTracker />
       </div>
     </BrowserRouter>
   );

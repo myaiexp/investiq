@@ -1,0 +1,129 @@
+.update-tracker {
+  position: fixed;
+  bottom: var(--gap-lg);
+  right: var(--gap-lg);
+  z-index: 150;
+}
+
+.update-tracker__pill {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-sm);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: var(--gap-xs) var(--gap-md);
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  white-space: nowrap;
+}
+
+.update-tracker__pill:hover {
+  border-color: var(--border-active);
+  background: var(--bg-hover);
+}
+
+.update-tracker__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  flex-shrink: 0;
+}
+
+.update-tracker__date {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+}
+
+.update-tracker__label {
+  font-weight: 600;
+}
+
+.update-tracker__panel {
+  position: absolute;
+  bottom: calc(100% + var(--gap-sm));
+  right: 0;
+  width: 320px;
+  max-height: 300px;
+  overflow-y: auto;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--gap-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-md);
+}
+
+.update-tracker__entry {
+  padding-bottom: var(--gap-md);
+  border-bottom: 1px solid var(--border);
+}
+
+.update-tracker__entry:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.update-tracker__entry-header {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-sm);
+  margin-bottom: 4px;
+}
+
+.update-tracker__entry-date {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.update-tracker__entry-category {
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+}
+
+.update-tracker__entry-category--data {
+  color: var(--accent);
+  background: rgba(59, 130, 246, 0.12);
+}
+
+.update-tracker__entry-category--system {
+  color: var(--green);
+  background: rgba(34, 197, 94, 0.12);
+}
+
+.update-tracker__entry-title {
+  font-size: 0.825rem;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.update-tracker__entry-desc {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+/* Mobile adjustments */
+@media (max-width: 720px) {
+  .update-tracker {
+    bottom: var(--gap-md);
+    right: var(--gap-md);
+  }
+
+  .update-tracker__panel {
+    width: 280px;
+  }
+
+  .update-tracker__label {
+    display: none;
+  }
+}

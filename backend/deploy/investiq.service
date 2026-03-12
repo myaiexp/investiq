@@ -1,0 +1,17 @@
+[Unit]
+Description=InvestIQ Backend API
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/investiq-backend
+EnvironmentFile=/var/www/investiq-backend/.env
+Environment=UV_CACHE_DIR=/var/www/investiq-backend/.uv-cache
+ExecStart=/usr/local/bin/uv run uvicorn app.main:app --host 127.0.0.1 --port 8000
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

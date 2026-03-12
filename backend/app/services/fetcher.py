@@ -44,9 +44,17 @@ def _normalize_dates(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
+def _flatten_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """Flatten MultiIndex columns from yfinance (e.g. ('Open', '^GSPC') → 'Open')."""
+    if isinstance(df.columns, pd.MultiIndex):
+        df.columns = df.columns.get_level_values(0)
+    return df
+
+
 def _download_sync(ticker: str, period: str, interval: str) -> pd.DataFrame:
     """Synchronous yfinance download — meant to be called via to_thread."""
-    return yf.download(ticker, period=period, interval=interval, progress=False)
+    df = yf.download(ticker, period=period, interval=interval, progress=False)
+    return _flatten_columns(df)
 
 
 def _ticker_info_sync(ticker: str) -> dict:

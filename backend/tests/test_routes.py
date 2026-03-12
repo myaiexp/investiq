@@ -93,9 +93,9 @@ class MockSession:
                 target_interval = interval_match.group(1)
                 rows = [r for r in rows if getattr(r, "interval", None) == target_interval]
 
-            # Filter for indicator_id IS NOT NULL
-            if "IS NOT NULL" in clause_str and "indicator_id" in clause_str:
-                rows = [r for r in rows if getattr(r, "indicator_id", None) is not None]
+            # Filter for indicator_id != '_aggregate'
+            if "_aggregate" in clause_str and "indicator_id" in clause_str:
+                rows = [r for r in rows if getattr(r, "indicator_id", None) != "_aggregate"]
 
             return rows
         return rows
@@ -205,7 +205,7 @@ SEED_INDICATORS = [
 ]
 
 SEED_SIGNALS = [
-    _make_signal("^GSPC", None, "buy"),      # aggregate
+    _make_signal("^GSPC", "_aggregate", "buy"),  # aggregate
     _make_signal("^GSPC", "rsi", "buy"),
     _make_signal("^GSPC", "macd", "sell"),
     _make_signal("^GSPC", "bollinger", "hold"),

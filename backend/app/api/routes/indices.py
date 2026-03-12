@@ -138,7 +138,7 @@ async def get_indicators(
     signal_result = await db.execute(
         select(SignalData).where(
             SignalData.ticker == ticker,
-            SignalData.indicator_id.isnot(None),
+            SignalData.indicator_id != "_aggregate",
         )
     )
     signal_rows = signal_result.scalars().all()
@@ -169,13 +169,13 @@ async def get_signal(ticker: str, db: AsyncSession = Depends(get_db)):
     if not rows:
         raise HTTPException(status_code=404, detail=f"No signals found for '{ticker}'")
 
-    # Separate aggregate (indicator_id is None) from per-indicator signals
+    # Separate aggregate (indicator_id="_aggregate") from per-indicator signals
     aggregate = "hold"
     breakdown: list[IndicatorMetaResponse] = []
     counts: dict[str, int] = {"buy": 0, "sell": 0, "hold": 0}
 
     for row in rows:
-        if row.indicator_id is None:
+        if row.indicator_id == "_aggregate":
             aggregate = row.signal
         else:
             category = INDICATOR_CATEGORIES.get(row.indicator_id, "oscillator")

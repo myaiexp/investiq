@@ -1,0 +1,16 @@
+[
+  {
+    "id": 1,
+    "date": "2026-03-12",
+    "category": "data",
+    "titleKey": "updates.dataRefresh",
+    "descriptionKey": "updates.dataRefreshDesc"
+  },
+  {
+    "id": 2,
+    "date": "2026-03-12",
+    "category": "system",
+    "titleKey": "updates.systemLaunch",
+    "descriptionKey": "updates.systemLaunchDesc"
+  }
+]

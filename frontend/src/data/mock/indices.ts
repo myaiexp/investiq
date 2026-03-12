@@ -1,0 +1,98 @@
+import type { IndexMeta, Signal } from "../../types/index.ts";
+
+/** Pre-computed mock signals per ticker */
+const signals: Record<string, Signal> = {
+  "^OMXH25": "buy",
+  "^OMXS30": "hold",
+  "^OMXC25": "buy",
+  "OBX.OL": "sell",
+  "^GSPC": "buy",
+  "^NDX": "buy",
+  "^GDAXI": "hold",
+  "^FTSE": "sell",
+  "^N225": "hold",
+  URTH: "buy",
+};
+
+export const MOCK_INDICES: IndexMeta[] = [
+  {
+    name: "OMXH25",
+    ticker: "^OMXH25",
+    region: "nordic",
+    price: 5234.18,
+    dailyChange: 0.73,
+    signal: signals["^OMXH25"],
+  },
+  {
+    name: "OMXS30",
+    ticker: "^OMXS30",
+    region: "nordic",
+    price: 2487.65,
+    dailyChange: -0.21,
+    signal: signals["^OMXS30"],
+  },
+  {
+    name: "OMXC25",
+    ticker: "^OMXC25",
+    region: "nordic",
+    price: 1823.42,
+    dailyChange: 1.15,
+    signal: signals["^OMXC25"],
+  },
+  {
+    name: "OBX",
+    ticker: "OBX.OL",
+    region: "nordic",
+    price: 1298.56,
+    dailyChange: -0.84,
+    signal: signals["OBX.OL"],
+  },
+  {
+    name: "S&P 500",
+    ticker: "^GSPC",
+    region: "global",
+    price: 5892.37,
+    dailyChange: 0.42,
+    signal: signals["^GSPC"],
+  },
+  {
+    name: "NASDAQ-100",
+    ticker: "^NDX",
+    region: "global",
+    price: 20834.15,
+    dailyChange: 0.89,
+    signal: signals["^NDX"],
+  },
+  {
+    name: "DAX 40",
+    ticker: "^GDAXI",
+    region: "global",
+    price: 18642.51,
+    dailyChange: 0.12,
+    signal: signals["^GDAXI"],
+  },
+  {
+    name: "FTSE 100",
+    ticker: "^FTSE",
+    region: "global",
+    price: 8234.78,
+    dailyChange: -0.56,
+    signal: signals["^FTSE"],
+  },
+  {
+    name: "Nikkei 225",
+    ticker: "^N225",
+    region: "global",
+    price: 38456.92,
+    dailyChange: 0.31,
+    signal: signals["^N225"],
+  },
+  {
+    name: "MSCI World",
+    ticker: "URTH",
+    region: "global",
+    price: 134.28,
+    dailyChange: 0.55,
+    signal: signals["URTH"],
+  },
+];

@@ -1,0 +1,10 @@
+.relative-perf-chart {
+  width: 100%;
+  height: 250px;
+}
+
+@media (max-width: 1024px) {
+  .relative-perf-chart {
+    height: 200px;
+  }
+}

@@ -1,0 +1,31 @@
+.bottom-drawer__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: flex-end;
+}
+
+.bottom-drawer__panel {
+  width: 100%;
+  max-height: 70vh;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  overflow-y: auto;
+  transform: translateY(0);
+  transition: transform 0.3s ease-out;
+}
+
+.bottom-drawer__handle {
+  width: 40px;
+  height: 4px;
+  background: var(--border-active);
+  border-radius: 2px;
+  margin: var(--gap-sm) auto var(--gap-md);
+}
+
+.bottom-drawer__content {
+  padding: 0 var(--gap-lg) var(--gap-xl);
+}

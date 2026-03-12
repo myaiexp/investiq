@@ -1,0 +1,54 @@
+.fund-detail {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.fund-detail__loading {
+  color: var(--text-muted);
+  margin-top: var(--gap-xl);
+}
+
+.fund-detail__header {
+  display: flex;
+  align-items: baseline;
+  gap: var(--gap-lg);
+  margin: var(--gap-lg) 0;
+  flex-wrap: wrap;
+}
+
+.fund-detail__title {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.fund-detail__nav {
+  font-size: 1.25rem;
+  color: var(--text-secondary);
+}
+
+.fund-detail__controls {
+  margin-bottom: var(--gap-lg);
+}
+
+.fund-detail__chart-section {
+  margin-bottom: var(--gap-xl);
+}
+
+.fund-detail__relative {
+  margin-bottom: var(--gap-xl);
+}
+
+.fund-detail__section-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: var(--gap-md);
+}
+
+.fund-detail__metrics {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-xl);
+}

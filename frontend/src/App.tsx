@@ -5,6 +5,8 @@ import "./App.css";
 
 import IndicesPage from "./pages/IndicesPage";
 import FundsPage from "./pages/FundsPage";
+import IndexDetailPage from "./pages/IndexDetailPage";
+import FundDetailPage from "./pages/FundDetailPage";
 
 function App() {
   const { t, i18n } = useTranslation();
@@ -36,6 +38,8 @@ function App() {
           <Routes>
             <Route path="/" element={<IndicesPage />} />
             <Route path="/funds" element={<FundsPage />} />
+            <Route path="/index/:ticker" element={<IndexDetailPage />} />
+            <Route path="/funds/:ticker" element={<FundDetailPage />} />
           </Routes>
         </main>
       </div>

@@ -1,0 +1,16 @@
+.back-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gap-xs);
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  cursor: pointer;
+  padding: var(--gap-xs) 0;
+  transition: color 0.15s;
+}
+
+.back-button:hover {
+  color: var(--text-primary);
+}

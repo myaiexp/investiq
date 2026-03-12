@@ -1,40 +1,37 @@
-.index-card__header {
-  display: flex;
-  align-items: center;
-  gap: var(--gap-md);
-  min-height: 40px;
-}
-
-.index-card__info {
+.index-card {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-  flex: 1;
+  gap: var(--gap-sm);
 }
 
 .index-card__name {
   font-size: 0.9rem;
   font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+}
+
+.index-card__mid {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gap-md);
 }
 
 .index-card__price {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-sm);
+}
+
+.index-card__nav {
   font-size: 0.8rem;
   color: var(--text-secondary);
 }
 
-@media (max-width: 720px) {
-  .index-card__header {
-    flex-wrap: wrap;
-  }
+.index-card__sparkline {
+  width: 100%;
+}
 
-  .index-card__info {
-    flex-basis: 100%;
-    flex-direction: row;
-    align-items: baseline;
-    gap: var(--gap-sm);
-  }
+.index-card__sparkline .sparkline-chart {
+  width: 100%;
+  height: auto;
 }

@@ -60,12 +60,14 @@ export default function FundDetailPage() {
       </div>
 
       <section className="fund-detail__chart-section">
-        <NAVChart
-          fundData={navData}
-          benchmarkData={benchmarkData}
-          fundName={fund.name}
-          benchmarkName={fund.benchmarkName}
-        />
+        {navData.length > 0 && (benchmarkData.length > 0 || !fund.benchmarkTicker) && (
+          <NAVChart
+            fundData={navData}
+            benchmarkData={benchmarkData}
+            fundName={fund.name}
+            benchmarkName={fund.benchmarkName}
+          />
+        )}
       </section>
 
       {benchmarkData.length > 0 && (

@@ -17,7 +17,7 @@ function App() {
   };
 
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/investiq">
       <div className="app">
         <header className="header">
           <div className="header-left">

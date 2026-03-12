@@ -1,0 +1,41 @@
+{
+  "app": {
+    "title": "InvestIQ",
+    "subtitle": "Tekninen analyysi"
+  },
+  "nav": {
+    "indices": "Indeksit",
+    "funds": "Rahastot"
+  },
+  "signal": {
+    "buy": "Osta",
+    "sell": "Myy",
+    "hold": "Pidä"
+  },
+  "period": {
+    "1m": "1kk",
+    "3m": "3kk",
+    "6m": "6kk",
+    "1y": "1v",
+    "5y": "5v"
+  },
+  "indicators": {
+    "rsi": "RSI",
+    "macd": "MACD",
+    "bollinger": "Bollingerin nauhat",
+    "ma": "Liukuvat keskiarvot",
+    "stochastic": "Stokastinen",
+    "obv": "OBV",
+    "fibonacci": "Fibonacci",
+    "atr": "ATR",
+    "ichimoku": "Ichimoku",
+    "cci": "CCI"
+  },
+  "funds": {
+    "performance": "Tuotto",
+    "volatility": "Volatiliteetti",
+    "sharpe": "Sharpen luku",
+    "maxDrawdown": "Suurin pudotus",
+    "benchmark": "Vertailuindeksi"
+  }
+}

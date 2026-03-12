@@ -1,0 +1,41 @@
+{
+  "app": {
+    "title": "InvestIQ",
+    "subtitle": "Technical Analysis"
+  },
+  "nav": {
+    "indices": "Indices",
+    "funds": "Funds"
+  },
+  "signal": {
+    "buy": "Buy",
+    "sell": "Sell",
+    "hold": "Hold"
+  },
+  "period": {
+    "1m": "1M",
+    "3m": "3M",
+    "6m": "6M",
+    "1y": "1Y",
+    "5y": "5Y"
+  },
+  "indicators": {
+    "rsi": "RSI",
+    "macd": "MACD",
+    "bollinger": "Bollinger Bands",
+    "ma": "Moving Averages",
+    "stochastic": "Stochastic",
+    "obv": "OBV",
+    "fibonacci": "Fibonacci",
+    "atr": "ATR",
+    "ichimoku": "Ichimoku",
+    "cci": "CCI"
+  },
+  "funds": {
+    "performance": "Performance",
+    "volatility": "Volatility",
+    "sharpe": "Sharpe Ratio",
+    "maxDrawdown": "Max Drawdown",
+    "benchmark": "Benchmark"
+  }
+}

@@ -1,0 +1,44 @@
+.perf-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.825rem;
+}
+
+.perf-table th,
+.perf-table td {
+  padding: var(--gap-xs) var(--gap-sm);
+  text-align: right;
+}
+
+.perf-table th:first-child,
+.perf-table td:first-child {
+  text-align: left;
+}
+
+.perf-table__period {
+  color: var(--text-muted);
+  font-weight: 500;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
+.perf-table__label {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.perf-table__value {
+  font-weight: 600;
+}
+
+.perf-table__positive {
+  color: var(--green);
+}
+
+.perf-table__negative {
+  color: var(--red);
+}
+
+.perf-table tbody tr {
+  border-top: 1px solid var(--border);
+}

@@ -1,0 +1,28 @@
+.metrics-row {
+  display: flex;
+  gap: var(--gap-lg);
+  flex-wrap: wrap;
+}
+
+.metrics-row__item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 80px;
+}
+
+.metrics-row__label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.metrics-row__value {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.metrics-row__value--negative {
+  color: var(--red);
+}

@@ -69,8 +69,8 @@
   },
   "updates": {
     "title": "Päivitykset",
-    "dataRefresh": "Datapäivitys",
-    "dataRefreshDesc": "Kaikki indeksit ja rahastot päivitetty reaaliaikaisella datalla.",
+    "uiFix": "Käyttöliittymäpäivitys",
+    "uiFixDesc": "Korttien asettelu uusittu, kaaviot normalisoitu vertailukelpoisiksi ja mobiilituki parannettu.",
     "systemLaunch": "Järjestelmä käynnistetty",
     "systemLaunchDesc": "InvestIQ-analyysidashboard on nyt käytössä."
   }

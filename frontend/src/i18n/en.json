@@ -69,8 +69,8 @@
   },
   "updates": {
     "title": "Updates",
-    "dataRefresh": "Data Refresh",
-    "dataRefreshDesc": "All indices and funds updated with real-time data.",
+    "uiFix": "UI Update",
+    "uiFixDesc": "Redesigned card layouts, normalized fund charts for comparison, and improved mobile responsiveness.",
     "systemLaunch": "System Launch",
     "systemLaunchDesc": "InvestIQ analysis dashboard is now live."
   }

@@ -2,9 +2,9 @@
   {
     "id": 1,
     "date": "2026-03-12",
-    "category": "data",
-    "titleKey": "updates.dataRefresh",
-    "descriptionKey": "updates.dataRefreshDesc"
+    "category": "system",
+    "titleKey": "updates.uiFix",
+    "descriptionKey": "updates.uiFixDesc"
   },
   {
     "id": 2,

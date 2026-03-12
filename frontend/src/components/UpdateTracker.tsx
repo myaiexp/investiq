@@ -19,11 +19,17 @@ interface CommitEntry {
 
 const STORAGE_KEY = "investiq-last-seen-update";
 
-function getLastSeenId(): number {
+function getLastSeenId(latestId: number): number {
   try {
-    return Number(localStorage.getItem(STORAGE_KEY)) || 0;
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored === null) {
+      // First visit — mark everything as seen
+      localStorage.setItem(STORAGE_KEY, String(latestId));
+      return latestId;
+    }
+    return Number(stored) || 0;
   } catch {
-    return 0;
+    return latestId;
   }
 }
 
@@ -58,10 +64,14 @@ export default function UpdateTracker() {
   const [expanded, setExpanded] = useState(false);
   const [tab, setTab] = useState<Tab>("updates");
   const [commits, setCommits] = useState<CommitEntry[]>([]);
-  const [lastSeenId, setLastSeen] = useState(getLastSeenId);
 
   const entries = updates as UpdateEntry[];
   const latest = entries[0];
+  const latestId = latest?.id ?? 0;
+  const [lastSeenId, setLastSeen] = useState(() => getLastSeenId(latestId));
+  // Track which entries to highlight — frozen when panel opens
+  const [highlightBelow, setHighlightBelow] = useState(0);
+
   const hasNew = latest && latest.id > lastSeenId;
 
   useEffect(() => {
@@ -72,19 +82,23 @@ export default function UpdateTracker() {
       .catch(() => {});
   }, [tab, commits.length]);
 
-  const handleOpen = useCallback(() => {
-    if (!expanded && hasNew && latest) {
-      setLastSeenId(latest.id);
-      setLastSeen(latest.id);
+  const handleToggle = useCallback(() => {
+    if (!expanded) {
+      // Opening: freeze the highlight threshold, then mark as seen
+      setHighlightBelow(lastSeenId);
+      if (hasNew && latest) {
+        setLastSeenId(latest.id);
+        setLastSeen(latest.id);
+      }
     }
     setExpanded(!expanded);
-  }, [expanded, hasNew, latest]);
+  }, [expanded, hasNew, latest, lastSeenId]);
 
   if (!latest) return null;
 
   return (
     <div className={`update-tracker${expanded ? " update-tracker--expanded" : ""}`}>
-      <button className="update-tracker__pill" onClick={handleOpen}>
+      <button className="update-tracker__pill" onClick={handleToggle}>
         <span className={`update-tracker__dot${hasNew ? " update-tracker__dot--pulse" : ""}`} />
         <span className="update-tracker__label">{t("updates.title")}</span>
       </button>
@@ -111,7 +125,7 @@ export default function UpdateTracker() {
               entries.map((entry) => (
                 <div
                   key={entry.id}
-                  className={`update-tracker__entry${entry.id > lastSeenId ? " update-tracker__entry--new" : ""}`}
+                  className={`update-tracker__entry${entry.id > highlightBelow ? " update-tracker__entry--new" : ""}`}
                 >
                   <h4 className="update-tracker__entry-title">
                     {t(entry.titleKey)}

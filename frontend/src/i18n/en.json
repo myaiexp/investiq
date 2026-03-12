@@ -19,6 +19,16 @@
     "1y": "1Y",
     "5y": "5Y"
   },
+  "interval": {
+    "1m": "1min",
+    "5m": "5min",
+    "15m": "15min",
+    "1H": "1H",
+    "2H": "2H",
+    "4H": "4H",
+    "1D": "1D",
+    "1W": "1W"
+  },
   "indicators": {
     "rsi": "RSI",
     "macd": "MACD",
@@ -31,11 +41,37 @@
     "ichimoku": "Ichimoku",
     "cci": "CCI"
   },
+  "group": {
+    "nordic": "Nordic",
+    "global": "Global",
+    "equity": "Equity",
+    "bond": "Bond"
+  },
+  "detail": {
+    "fullAnalysis": "Full analysis",
+    "back": "Back",
+    "signalSummary": "Signal summary",
+    "indicatorPanel": "Indicators",
+    "aggregate": "Aggregate signal"
+  },
   "funds": {
     "performance": "Performance",
     "volatility": "Volatility",
     "sharpe": "Sharpe Ratio",
     "maxDrawdown": "Max Drawdown",
-    "benchmark": "Benchmark"
+    "benchmark": "Benchmark",
+    "ter": "Total Expense Ratio (TER)",
+    "return1y": "1Y Return",
+    "return3y": "3Y Return",
+    "return5y": "5Y Return",
+    "fund": "Fund",
+    "relativePerformance": "Relative Performance"
+  },
+  "updates": {
+    "title": "Updates",
+    "dataRefresh": "Data Refresh",
+    "dataRefreshDesc": "All indices and funds updated with real-time data.",
+    "systemLaunch": "System Launch",
+    "systemLaunchDesc": "InvestIQ analysis dashboard is now live."
   }
 }

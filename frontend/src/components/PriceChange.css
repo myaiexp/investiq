@@ -1,0 +1,26 @@
+.price-change {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  white-space: nowrap;
+}
+
+.price-change--sm {
+  font-size: 0.75rem;
+}
+
+.price-change--md {
+  font-size: 0.875rem;
+}
+
+.price-change--up {
+  color: var(--green);
+}
+
+.price-change--down {
+  color: var(--red);
+}
+
+.price-change--neutral {
+  color: var(--text-muted);
+}

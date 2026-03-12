@@ -1,0 +1,28 @@
+.expandable-card {
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.expandable-card:hover {
+  border-color: var(--border-active);
+  background: var(--bg-hover);
+}
+
+.expandable-card--expanded {
+  grid-column: 1 / -1;
+  cursor: default;
+  border-color: var(--border-active);
+}
+
+.expandable-card__header {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-md);
+  flex-wrap: wrap;
+}
+
+.expandable-card__content {
+  margin-top: var(--gap-lg);
+  padding-top: var(--gap-lg);
+  border-top: 1px solid var(--border);
+}

@@ -19,6 +19,16 @@
     "1y": "1v",
     "5y": "5v"
   },
+  "interval": {
+    "1m": "1min",
+    "5m": "5min",
+    "15m": "15min",
+    "1H": "1t",
+    "2H": "2t",
+    "4H": "4t",
+    "1D": "1pv",
+    "1W": "1vk"
+  },
   "indicators": {
     "rsi": "RSI",
     "macd": "MACD",
@@ -31,11 +41,37 @@
     "ichimoku": "Ichimoku",
     "cci": "CCI"
   },
+  "group": {
+    "nordic": "Pohjoismaat",
+    "global": "Maailma",
+    "equity": "Osake",
+    "bond": "Korko"
+  },
+  "detail": {
+    "fullAnalysis": "Täysi analyysi",
+    "back": "Takaisin",
+    "signalSummary": "Signaaliyhteenveto",
+    "indicatorPanel": "Indikaattorit",
+    "aggregate": "Kokonaissignaali"
+  },
   "funds": {
     "performance": "Tuotto",
     "volatility": "Volatiliteetti",
     "sharpe": "Sharpen luku",
     "maxDrawdown": "Suurin pudotus",
-    "benchmark": "Vertailuindeksi"
+    "benchmark": "Vertailuindeksi",
+    "ter": "Kokonaiskulut (TER)",
+    "return1y": "1v tuotto",
+    "return3y": "3v tuotto",
+    "return5y": "5v tuotto",
+    "fund": "Rahasto",
+    "relativePerformance": "Suhteellinen tuotto"
+  },
+  "updates": {
+    "title": "Päivitykset",
+    "dataRefresh": "Datapäivitys",
+    "dataRefreshDesc": "Kaikki indeksit ja rahastot päivitetty reaaliaikaisella datalla.",
+    "systemLaunch": "Järjestelmä käynnistetty",
+    "systemLaunchDesc": "InvestIQ-analyysidashboard on nyt käytössä."
   }
 }

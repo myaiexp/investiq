@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { CandlestickSeries, HistogramSeries } from "lightweight-charts";
-import type { Time } from "lightweight-charts";
+import type { UTCTimestamp } from "lightweight-charts";
 import type { OHLCVBar, IndicatorData, IndicatorId } from "../../types/index.ts";
 import { useChart } from "./useChart.ts";
 import { useIndicatorSeries } from "./useIndicatorSeries.ts";
@@ -49,7 +49,7 @@ export default function PriceChart({
 
     // Map OHLCV data to candlestick format (cast time to lightweight-charts Time)
     const candleData = data.map((bar) => ({
-      time: bar.time as Time,
+      time: bar.time as UTCTimestamp,
       open: bar.open,
       high: bar.high,
       low: bar.low,
@@ -58,7 +58,7 @@ export default function PriceChart({
 
     // Map OHLCV data to volume format with color coding
     const volData = data.map((bar) => ({
-      time: bar.time as Time,
+      time: bar.time as UTCTimestamp,
       value: bar.volume,
       color:
         bar.close >= bar.open

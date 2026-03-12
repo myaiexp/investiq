@@ -1,14 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import type { IndexMeta, OHLCVBar, IndicatorMeta } from "../types/index.ts";
+import type { IndexMeta, OHLCVBar, IndicatorMeta, SignalSummary } from "../types/index.ts";
 import { api } from "../api/client.ts";
 import CardGrid from "../components/CardGrid.tsx";
 import GroupLabel from "../components/GroupLabel.tsx";
 import ExpandableCard from "../components/ExpandableCard.tsx";
 import IndexCard from "../components/IndexCard.tsx";
 import IndexExpandedPanel from "../components/IndexExpandedPanel.tsx";
-import { generateOHLCV } from "../data/mock/index.ts";
-import { MOCK_SIGNALS } from "../data/mock/signals.ts";
 import "./IndicesPage.css";
 
 export default function IndicesPage() {
@@ -16,10 +14,30 @@ export default function IndicesPage() {
   const [indices, setIndices] = useState<IndexMeta[]>([]);
   const [expandedTicker, setExpandedTicker] = useState<string | null>(null);
   const [expandedOHLCV, setExpandedOHLCV] = useState<OHLCVBar[]>([]);
+  const [sparklines, setSparklines] = useState<Record<string, { time: number; value: number }[]>>({});
+  const [signals, setSignals] = useState<Record<string, SignalSummary>>({});
+  const fetchedSparklines = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     api.getIndices().then(setIndices);
   }, []);
+
+  // Fetch sparklines and signals for all indices once they're loaded
+  useEffect(() => {
+    for (const index of indices) {
+      if (fetchedSparklines.current.has(index.ticker)) continue;
+      fetchedSparklines.current.add(index.ticker);
+      api.getOHLCV(index.ticker, "1m", "1D").then((bars) => {
+        setSparklines((prev) => ({
+          ...prev,
+          [index.ticker]: bars.map((b) => ({ time: b.time, value: b.close })),
+        }));
+      }).catch(() => {});
+      api.getSignal(index.ticker).then((sig) => {
+        setSignals((prev) => ({ ...prev, [index.ticker]: sig }));
+      }).catch(() => {});
+    }
+  }, [indices]);
 
   const handleCardClick = (ticker: string) => {
     if (expandedTicker === ticker) {
@@ -27,7 +45,6 @@ export default function IndicesPage() {
       setExpandedOHLCV([]);
     } else {
       setExpandedTicker(ticker);
-      // Load 3-month daily data for expanded panel chart
       api.getOHLCV(ticker, "3m", "1D").then(setExpandedOHLCV);
     }
   };
@@ -35,14 +52,10 @@ export default function IndicesPage() {
   const nordicIndices = indices.filter((i) => i.region === "nordic");
   const globalIndices = indices.filter((i) => i.region === "global");
 
-  const getSparklineData = (ticker: string) => {
-    // 30-day close data for sparkline
-    const bars = generateOHLCV(ticker, "1m", "1D");
-    return bars.map((b) => ({ time: b.time, value: b.close }));
-  };
+  const getSparklineData = (ticker: string) => sparklines[ticker] ?? [];
 
   const getTopIndicators = (ticker: string): IndicatorMeta[] => {
-    const summary = MOCK_SIGNALS[ticker];
+    const summary = signals[ticker];
     if (!summary) return [];
     return summary.breakdown;
   };

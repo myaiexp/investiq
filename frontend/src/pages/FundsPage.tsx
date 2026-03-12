@@ -1,23 +1,35 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import type { FundMeta } from "../types/index.ts";
+import type { FundMeta, FundNAVPoint } from "../types/index.ts";
 import { api } from "../api/client.ts";
 import CardGrid from "../components/CardGrid.tsx";
 import GroupLabel from "../components/GroupLabel.tsx";
 import ExpandableCard from "../components/ExpandableCard.tsx";
 import FundCard from "../components/FundCard.tsx";
 import FundExpandedPanel from "../components/FundExpandedPanel.tsx";
-import { generateFundNAV } from "../data/mock/index.ts";
 import "./FundsPage.css";
 
 export default function FundsPage() {
   const { t } = useTranslation();
   const [funds, setFunds] = useState<FundMeta[]>([]);
   const [expandedTicker, setExpandedTicker] = useState<string | null>(null);
+  const [sparklines, setSparklines] = useState<Record<string, FundNAVPoint[]>>({});
+  const fetchedSparklines = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     api.getFunds().then(setFunds);
   }, []);
+
+  // Fetch sparklines for all funds once loaded
+  useEffect(() => {
+    for (const fund of funds) {
+      if (fetchedSparklines.current.has(fund.ticker)) continue;
+      fetchedSparklines.current.add(fund.ticker);
+      api.getFundNAV(fund.ticker, "3m").then((points) => {
+        setSparklines((prev) => ({ ...prev, [fund.ticker]: points }));
+      }).catch(() => {});
+    }
+  }, [funds]);
 
   const handleCardClick = (ticker: string) => {
     setExpandedTicker(expandedTicker === ticker ? null : ticker);
@@ -27,7 +39,7 @@ export default function FundsPage() {
   const bondFunds = funds.filter((f) => f.fundType === "bond");
 
   const getSparklineData = (ticker: string) => {
-    const points = generateFundNAV(ticker, "3m");
+    const points = sparklines[ticker] ?? [];
     return points.map((p) => ({ time: p.time, value: p.value }));
   };
 

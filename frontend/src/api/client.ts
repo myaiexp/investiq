@@ -38,24 +38,24 @@ export const api: Api = {
 
   getOHLCV: (ticker: string, period: Period = "1y", interval: Interval = "1D") =>
     get<OHLCVBar[]>(
-      `/indices/${encodeURIComponent(ticker)}/ohlcv/?period=${period}&interval=${interval}`,
+      `/indices/${encodeURIComponent(ticker)}/ohlcv?period=${period}&interval=${interval}`,
     ),
 
   getIndicators: (ticker: string, period: Period = "1y", interval: Interval = "1D") =>
     get<IndicatorData[]>(
-      `/indices/${encodeURIComponent(ticker)}/indicators/?period=${period}&interval=${interval}`,
+      `/indices/${encodeURIComponent(ticker)}/indicators?period=${period}&interval=${interval}`,
     ),
 
   getSignal: (ticker: string) =>
-    get<SignalSummary>(`/indices/${encodeURIComponent(ticker)}/signal/`),
+    get<SignalSummary>(`/indices/${encodeURIComponent(ticker)}/signal`),
 
   getFunds: () => get<FundMeta[]>("/funds/"),
 
   getFundPerformance: (ticker: string) =>
-    get<FundPerformance>(`/funds/${encodeURIComponent(ticker)}/performance/`),
+    get<FundPerformance>(`/funds/${encodeURIComponent(ticker)}/performance`),
 
   getFundNAV: (ticker: string, period: Period = "1y") =>
     get<FundNAVPoint[]>(
-      `/funds/${encodeURIComponent(ticker)}/nav/?period=${period}`,
+      `/funds/${encodeURIComponent(ticker)}/nav?period=${period}`,
     ),
 };

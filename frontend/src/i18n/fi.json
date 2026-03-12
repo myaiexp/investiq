@@ -69,6 +69,8 @@
   },
   "updates": {
     "title": "Päivitykset",
+    "changelog": "Muutosloki lisätty",
+    "changelogDesc": "Päivityswidgetissä on nyt Changelog-välilehti, josta näet kaikki viimeisimmät muutokset.",
     "uiFix": "Käyttöliittymäpäivitys",
     "uiFixDesc": "Korttien asettelu uusittu, kaaviot normalisoitu vertailukelpoisiksi ja mobiilituki parannettu.",
     "systemLaunch": "Järjestelmä käynnistetty",

@@ -69,6 +69,8 @@
   },
   "updates": {
     "title": "Updates",
+    "changelog": "Changelog added",
+    "changelogDesc": "The updates widget now has a Changelog tab showing all recent changes.",
     "uiFix": "UI Update",
     "uiFixDesc": "Redesigned card layouts, normalized fund charts for comparison, and improved mobile responsiveness.",
     "systemLaunch": "System Launch",

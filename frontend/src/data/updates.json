@@ -1,5 +1,12 @@
 [
   {
+    "id": 3,
+    "date": "2026-03-12",
+    "category": "system",
+    "titleKey": "updates.changelog",
+    "descriptionKey": "updates.changelogDesc"
+  },
+  {
     "id": 1,
     "date": "2026-03-12",
     "category": "system",

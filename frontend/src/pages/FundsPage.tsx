@@ -46,6 +46,7 @@ export default function FundsPage() {
                 <FundCard
                   fund={fund}
                   sparklineData={getSparklineData(fund.ticker)}
+                  expanded={expandedTicker === fund.ticker}
                 />
               }
               expandedContent={<FundExpandedPanel fund={fund} />}

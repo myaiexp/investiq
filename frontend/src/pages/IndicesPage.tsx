@@ -62,6 +62,7 @@ export default function IndicesPage() {
                 <IndexCard
                   index={index}
                   sparklineData={getSparklineData(index.ticker)}
+                  expanded={expandedTicker === index.ticker}
                 />
               }
               expandedContent={

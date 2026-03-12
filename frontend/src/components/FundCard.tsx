@@ -7,9 +7,10 @@ import "./FundCard.css";
 interface FundCardProps {
   fund: FundMeta;
   sparklineData: { time: number; value: number }[];
+  expanded?: boolean;
 }
 
-export default function FundCard({ fund, sparklineData }: FundCardProps) {
+export default function FundCard({ fund, sparklineData, expanded }: FundCardProps) {
   return (
     <div className="fund-card">
       <div className="fund-card__top">
@@ -26,12 +27,14 @@ export default function FundCard({ fund, sparklineData }: FundCardProps) {
           <PriceChange value={fund.return1Y} size="md" />
         </div>
       </div>
-      <div className="fund-card__sparkline">
-        <SparklineChart
-          data={sparklineData}
-          color={fund.return1Y >= 0 ? "var(--green)" : "var(--red)"}
-        />
-      </div>
+      {!expanded && (
+        <div className="fund-card__sparkline">
+          <SparklineChart
+            data={sparklineData}
+            color={fund.return1Y >= 0 ? "var(--green)" : "var(--red)"}
+          />
+        </div>
+      )}
       <span className="fund-card__benchmark-text">vs. {fund.benchmarkName}</span>
     </div>
   );

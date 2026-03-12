@@ -7,9 +7,10 @@ import "./IndexCard.css";
 interface IndexCardProps {
   index: IndexMeta;
   sparklineData: { time: number; value: number }[];
+  expanded?: boolean;
 }
 
-export default function IndexCard({ index, sparklineData }: IndexCardProps) {
+export default function IndexCard({ index, sparklineData, expanded }: IndexCardProps) {
   return (
     <div className="index-card">
       <span className="index-card__name">{index.name}</span>
@@ -22,9 +23,11 @@ export default function IndexCard({ index, sparklineData }: IndexCardProps) {
         </div>
         <SignalBadge signal={index.signal} />
       </div>
-      <div className="index-card__sparkline">
-        <SparklineChart data={sparklineData} />
-      </div>
+      {!expanded && (
+        <div className="index-card__sparkline">
+          <SparklineChart data={sparklineData} />
+        </div>
+      )}
     </div>
   );
 }

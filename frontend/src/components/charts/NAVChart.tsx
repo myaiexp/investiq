@@ -86,7 +86,7 @@ export default function NAVChart({
     const fundSeries = chart.addSeries(LineSeries, {
       color: "#3b82f6",
       lineWidth: 2,
-      title: fundName,
+      title: "",
       priceFormat: normalize
         ? { type: "custom", formatter: (v: number) => `${v >= 0 ? "+" : ""}${v.toFixed(2)}%` }
         : { type: "price", precision: 2, minMove: 0.01 },
@@ -105,7 +105,7 @@ export default function NAVChart({
         color: "#64748b",
         lineWidth: 1,
         lineStyle: 2,
-        title: benchmarkName ?? "Benchmark",
+        title: "",
         priceFormat: {
           type: "custom",
           formatter: (v: number) => `${v >= 0 ? "+" : ""}${v.toFixed(2)}%`,

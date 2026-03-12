@@ -44,7 +44,7 @@ export default function IndicesPage() {
   const getTopIndicators = (ticker: string): IndicatorMeta[] => {
     const summary = MOCK_SIGNALS[ticker];
     if (!summary) return [];
-    return summary.breakdown.slice(0, 4);
+    return summary.breakdown;
   };
 
   const renderGroup = (label: string, items: IndexMeta[]) => {

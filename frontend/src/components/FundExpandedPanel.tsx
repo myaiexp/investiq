@@ -65,7 +65,7 @@ export default function FundExpandedPanel({ fund }: FundExpandedPanelProps) {
     const fundSeries = chart.addSeries(LineSeries, {
       color: "#3b82f6",
       lineWidth: 2,
-      title: fund.name,
+      title: "",
       priceFormat: hasBenchmark
         ? { type: "custom", formatter: pctFormatter }
         : { type: "price", precision: 2, minMove: 0.01 },
@@ -83,7 +83,7 @@ export default function FundExpandedPanel({ fund }: FundExpandedPanelProps) {
         color: "#64748b",
         lineWidth: 1,
         lineStyle: 2,
-        title: fund.benchmarkName,
+        title: "",
         priceFormat: { type: "custom", formatter: pctFormatter },
       });
 

@@ -1,0 +1,9 @@
+.indices-page__title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: var(--gap-xl);
+}
+
+.indices-page__group {
+  margin-bottom: var(--gap-xl);
+}

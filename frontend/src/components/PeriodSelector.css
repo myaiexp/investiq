@@ -1,0 +1,36 @@
+.period-selector {
+  display: flex;
+  gap: var(--gap-xs);
+  flex-wrap: wrap;
+}
+
+.period-selector__pill {
+  padding: 0.375rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    border-color 0.15s;
+  user-select: none;
+}
+
+.period-selector__pill:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.period-selector__pill--active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.period-selector__pill--active:hover {
+  background: var(--accent-hover);
+}

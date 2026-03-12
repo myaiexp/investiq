@@ -19,6 +19,7 @@ export default function FundDetailPage() {
   const [performance, setPerformance] = useState<FundPerformance | null>(null);
   const [navData, setNavData] = useState<FundNAVPoint[]>([]);
   const [benchmarkData, setBenchmarkData] = useState<FundNAVPoint[]>([]);
+  const [benchmarkFailed, setBenchmarkFailed] = useState(false);
   const [period, setPeriod] = useState<Period>("1y");
 
   useEffect(() => {
@@ -27,14 +28,17 @@ export default function FundDetailPage() {
       const found = funds.find((f) => f.ticker === ticker);
       setFund(found ?? null);
     });
-    api.getFundPerformance(ticker).then(setPerformance);
+    api.getFundPerformance(ticker).then(setPerformance).catch(() => {});
   }, [ticker]);
 
   useEffect(() => {
     if (!ticker) return;
-    api.getFundNAV(ticker, period).then(setNavData);
+    api.getFundNAV(ticker, period).then(setNavData).catch(() => {});
     if (fund?.benchmarkTicker) {
-      api.getFundNAV(fund.benchmarkTicker, period).then(setBenchmarkData);
+      setBenchmarkFailed(false);
+      api.getFundNAV(fund.benchmarkTicker, period)
+        .then(setBenchmarkData)
+        .catch(() => setBenchmarkFailed(true));
     }
   }, [ticker, period, fund?.benchmarkTicker]);
 
@@ -60,7 +64,7 @@ export default function FundDetailPage() {
       </div>
 
       <section className="fund-detail__chart-section">
-        {navData.length > 0 && (benchmarkData.length > 0 || !fund.benchmarkTicker) && (
+        {navData.length > 0 && (benchmarkData.length > 0 || !fund.benchmarkTicker || benchmarkFailed) && (
           <NAVChart
             fundData={navData}
             benchmarkData={benchmarkData}

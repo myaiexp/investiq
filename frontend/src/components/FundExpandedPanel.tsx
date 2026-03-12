@@ -25,18 +25,23 @@ export default function FundExpandedPanel({ fund }: FundExpandedPanelProps) {
   const [navData, setNavData] = useState<FundNAVPoint[]>([]);
   const [benchmarkData, setBenchmarkData] = useState<FundNAVPoint[]>([]);
 
+  const [benchmarkFailed, setBenchmarkFailed] = useState(false);
+
   useEffect(() => {
-    api.getFundPerformance(fund.ticker).then(setPerformance);
-    api.getFundNAV(fund.ticker, "1y").then(setNavData);
+    api.getFundPerformance(fund.ticker).then(setPerformance).catch(() => {});
+    api.getFundNAV(fund.ticker, "1y").then(setNavData).catch(() => {});
 
     if (fund.benchmarkTicker) {
-      api.getFundNAV(fund.benchmarkTicker, "1y").then(setBenchmarkData);
+      setBenchmarkFailed(false);
+      api.getFundNAV(fund.benchmarkTicker, "1y")
+        .then(setBenchmarkData)
+        .catch(() => setBenchmarkFailed(true));
     }
   }, [fund.ticker, fund.benchmarkTicker]);
 
   useEffect(() => {
     if (!containerRef.current || navData.length === 0) return;
-    if (fund.benchmarkTicker && benchmarkData.length === 0) return;
+    if (fund.benchmarkTicker && benchmarkData.length === 0 && !benchmarkFailed) return;
 
     const chart = createChart(containerRef.current, {
       autoSize: true,

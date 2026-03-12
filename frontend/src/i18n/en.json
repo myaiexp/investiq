@@ -73,6 +73,8 @@
     "changelogDesc": "The updates widget now has a Changelog tab showing all recent changes.",
     "uiFix": "UI Update",
     "uiFixDesc": "Redesigned card layouts, normalized fund charts for comparison, and improved mobile responsiveness.",
+    "realData": "Live Market Data",
+    "realDataDesc": "The dashboard now uses real market data. Index prices, technical indicators, and signals update automatically. Fund NAV values and returns are fetched directly from the markets. Some bugs are still being fixed.",
     "systemLaunch": "System Launch",
     "systemLaunchDesc": "InvestIQ analysis dashboard is now live."
   }

@@ -73,6 +73,8 @@
     "changelogDesc": "Päivityswidgetissä on nyt Changelog-välilehti, josta näet kaikki viimeisimmät muutokset.",
     "uiFix": "Käyttöliittymäpäivitys",
     "uiFixDesc": "Korttien asettelu uusittu, kaaviot normalisoitu vertailukelpoisiksi ja mobiilituki parannettu.",
+    "realData": "Reaaliaikainen markkinadata",
+    "realDataDesc": "Dashboard käyttää nyt oikeaa markkinadataa. Indeksien hinnat, tekniset indikaattorit ja signaalit päivittyvät automaattisesti. Rahastojen NAV-arvot ja tuottotiedot haetaan suoraan markkinoilta. Joitakin virheitä korjataan vielä.",
     "systemLaunch": "Järjestelmä käynnistetty",
     "systemLaunchDesc": "InvestIQ-analyysidashboard on nyt käytössä."
   }

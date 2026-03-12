@@ -23,11 +23,7 @@ export default function IndexCard({ index, sparklineData }: IndexCardProps) {
         <SignalBadge signal={index.signal} />
       </div>
       <div className="index-card__sparkline">
-        <SparklineChart
-          data={sparklineData}
-          width={280}
-          height={36}
-        />
+        <SparklineChart data={sparklineData} />
       </div>
     </div>
   );

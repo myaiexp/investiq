@@ -32,8 +32,6 @@ export default function SparklineChart({
     <svg
       className="sparkline-chart"
       viewBox={`0 0 ${width} ${height}`}
-      width={width}
-      height={height}
     >
       <polyline
         points={points}

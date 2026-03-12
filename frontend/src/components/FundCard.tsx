@@ -29,8 +29,6 @@ export default function FundCard({ fund, sparklineData }: FundCardProps) {
       <div className="fund-card__sparkline">
         <SparklineChart
           data={sparklineData}
-          width={280}
-          height={36}
           color={fund.return1Y >= 0 ? "var(--green)" : "var(--red)"}
         />
       </div>

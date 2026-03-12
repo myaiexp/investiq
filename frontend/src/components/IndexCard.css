@@ -30,8 +30,3 @@
 .index-card__sparkline {
   width: 100%;
 }
-
-.index-card__sparkline .sparkline-chart {
-  width: 100%;
-  height: auto;
-}

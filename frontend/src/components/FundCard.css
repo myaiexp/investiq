@@ -50,11 +50,6 @@
   width: 100%;
 }
 
-.fund-card__sparkline .sparkline-chart {
-  width: 100%;
-  height: auto;
-}
-
 .fund-card__benchmark-text {
   font-size: 0.7rem;
   color: var(--text-muted);

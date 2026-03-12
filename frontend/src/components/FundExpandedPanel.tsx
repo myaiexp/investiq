@@ -36,6 +36,7 @@ export default function FundExpandedPanel({ fund }: FundExpandedPanelProps) {
 
   useEffect(() => {
     if (!containerRef.current || navData.length === 0) return;
+    if (fund.benchmarkTicker && benchmarkData.length === 0) return;
 
     const chart = createChart(containerRef.current, {
       autoSize: true,
@@ -55,31 +56,41 @@ export default function FundExpandedPanel({ fund }: FundExpandedPanelProps) {
 
     chartRef.current = chart;
 
+    // Normalize to percentage change when benchmark is present
+    const hasBenchmark = benchmarkData.length > 0;
+    const fundBase = navData[0]?.value ?? 1;
+    const benchBase = benchmarkData[0]?.value ?? 1;
+    const pctFormatter = (v: number) => `${v >= 0 ? "+" : ""}${v.toFixed(1)}%`;
+
     const fundSeries = chart.addSeries(LineSeries, {
       color: "#3b82f6",
       lineWidth: 2,
       title: fund.name,
+      priceFormat: hasBenchmark
+        ? { type: "custom", formatter: pctFormatter }
+        : { type: "price", precision: 2, minMove: 0.01 },
     });
 
     fundSeries.setData(
       navData.map((p) => ({
         time: p.time as UTCTimestamp,
-        value: p.value,
+        value: hasBenchmark ? ((p.value - fundBase) / fundBase) * 100 : p.value,
       })),
     );
 
-    if (benchmarkData.length > 0) {
+    if (hasBenchmark) {
       const benchSeries = chart.addSeries(LineSeries, {
         color: "#64748b",
         lineWidth: 1,
         lineStyle: 2,
         title: fund.benchmarkName,
+        priceFormat: { type: "custom", formatter: pctFormatter },
       });
 
       benchSeries.setData(
         benchmarkData.map((p) => ({
           time: p.time as UTCTimestamp,
-          value: p.value,
+          value: ((p.value - benchBase) / benchBase) * 100,
         })),
       );
     }

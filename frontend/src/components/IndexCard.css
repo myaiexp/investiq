@@ -25,3 +25,16 @@
   font-size: 0.8rem;
   color: var(--text-secondary);
 }
+
+@media (max-width: 720px) {
+  .index-card__header {
+    flex-wrap: wrap;
+  }
+
+  .index-card__info {
+    flex-basis: 100%;
+    flex-direction: row;
+    align-items: baseline;
+    gap: var(--gap-sm);
+  }
+}

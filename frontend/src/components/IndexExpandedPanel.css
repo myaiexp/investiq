@@ -1,15 +1,20 @@
+/* Desktop: chart + signals sidebar */
 .index-expanded {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr 200px;
+  grid-template-rows: 1fr auto;
   gap: var(--gap-lg);
 }
 
 .index-expanded__chart {
-  width: 100%;
+  grid-column: 1;
+  grid-row: 1;
   min-height: 240px;
 }
 
 .index-expanded__signals {
+  grid-column: 2;
+  grid-row: 1;
   display: flex;
   flex-direction: column;
   gap: var(--gap-sm);
@@ -37,12 +42,31 @@
 }
 
 .index-expanded__link {
+  grid-column: 1 / -1;
+  grid-row: 2;
   font-size: 0.875rem;
   font-weight: 500;
 }
 
+/* Mobile: stacked, signals in 2-column grid */
 @media (max-width: 720px) {
+  .index-expanded {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-lg);
+  }
+
   .index-expanded__chart {
     min-height: 200px;
+  }
+
+  .index-expanded__signals {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--gap-sm);
+  }
+
+  .index-expanded__signals-title {
+    grid-column: 1 / -1;
   }
 }

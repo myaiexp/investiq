@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import updates from "../data/updates.json";
 import "./UpdateTracker.css";
@@ -15,6 +15,22 @@ interface CommitEntry {
   hash: string;
   date: string;
   message: string;
+}
+
+const STORAGE_KEY = "investiq-last-seen-update";
+
+function getLastSeenId(): number {
+  try {
+    return Number(localStorage.getItem(STORAGE_KEY)) || 0;
+  } catch {
+    return 0;
+  }
+}
+
+function setLastSeenId(id: number) {
+  try {
+    localStorage.setItem(STORAGE_KEY, String(id));
+  } catch {}
 }
 
 function formatFinnishDateTime(isoDate: string): string {
@@ -42,6 +58,11 @@ export default function UpdateTracker() {
   const [expanded, setExpanded] = useState(false);
   const [tab, setTab] = useState<Tab>("updates");
   const [commits, setCommits] = useState<CommitEntry[]>([]);
+  const [lastSeenId, setLastSeen] = useState(getLastSeenId);
+
+  const entries = updates as UpdateEntry[];
+  const latest = entries[0];
+  const hasNew = latest && latest.id > lastSeenId;
 
   useEffect(() => {
     if (tab !== "changelog" || commits.length > 0) return;
@@ -51,18 +72,20 @@ export default function UpdateTracker() {
       .catch(() => {});
   }, [tab, commits.length]);
 
-  const entries = updates as UpdateEntry[];
-  const latest = entries[0];
+  const handleOpen = useCallback(() => {
+    if (!expanded && hasNew && latest) {
+      setLastSeenId(latest.id);
+      setLastSeen(latest.id);
+    }
+    setExpanded(!expanded);
+  }, [expanded, hasNew, latest]);
 
   if (!latest) return null;
 
   return (
     <div className={`update-tracker${expanded ? " update-tracker--expanded" : ""}`}>
-      <button
-        className="update-tracker__pill"
-        onClick={() => setExpanded(!expanded)}
-      >
-        <span className="update-tracker__dot" />
+      <button className="update-tracker__pill" onClick={handleOpen}>
+        <span className={`update-tracker__dot${hasNew ? " update-tracker__dot--pulse" : ""}`} />
         <span className="update-tracker__label">{t("updates.title")}</span>
       </button>
 
@@ -86,7 +109,10 @@ export default function UpdateTracker() {
           <div className="update-tracker__content">
             {tab === "updates" &&
               entries.map((entry) => (
-                <div key={entry.id} className="update-tracker__entry">
+                <div
+                  key={entry.id}
+                  className={`update-tracker__entry${entry.id > lastSeenId ? " update-tracker__entry--new" : ""}`}
+                >
                   <h4 className="update-tracker__entry-title">
                     {t(entry.titleKey)}
                   </h4>

@@ -28,7 +28,7 @@ export default function SignalSummaryCard({
       {/* Aggregate verdict */}
       <div className="signal-summary__verdict">
         <span className="signal-summary__label">
-          {t("indicators.rsi") === "RSI" ? "Signal" : "Signaali"}
+          {t("detail.aggregate")}
         </span>
         <span
           className={`signal-summary__aggregate signal-${summary.aggregate}`}

@@ -23,7 +23,7 @@ export default function IndicatorPanel({
   return (
     <div className="indicator-panel">
       <h3 className="indicator-panel__title">
-        {t("indicators.rsi") === "RSI" ? "Indicators" : "Indikaattorit"}
+        {t("detail.indicatorPanel")}
       </h3>
       <ul className="indicator-panel__list">
         {indicators.map((ind) => {

@@ -1,3 +1,7 @@
+.nav-chart__wrapper {
+  position: relative;
+}
+
 .nav-chart {
   width: 100%;
   height: 400px;
@@ -7,4 +11,55 @@
   .nav-chart {
     height: 300px;
   }
+}
+
+.nav-tooltip {
+  position: absolute;
+  display: none;
+  background: rgba(10, 14, 23, 0.92);
+  border: 1px solid var(--border-active);
+  border-radius: var(--radius-sm);
+  padding: var(--gap-xs) var(--gap-sm);
+  pointer-events: none;
+  z-index: 10;
+  white-space: nowrap;
+  font-size: 0.75rem;
+}
+
+.nav-tooltip__row {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-sm);
+  padding: 2px 0;
+}
+
+.nav-tooltip__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.nav-tooltip__dot--fund {
+  background: #3b82f6;
+}
+
+.nav-tooltip__dot--bench {
+  background: #64748b;
+}
+
+.nav-tooltip__name {
+  color: var(--text-secondary);
+  margin-right: auto;
+}
+
+.nav-tooltip__price {
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+}
+
+.nav-tooltip__pct {
+  font-family: var(--font-mono);
+  min-width: 60px;
+  text-align: right;
 }

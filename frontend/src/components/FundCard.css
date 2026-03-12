@@ -1,20 +1,10 @@
-.fund-card__header {
-  display: flex;
-  align-items: center;
-  gap: var(--gap-md);
-  flex-wrap: wrap;
-  min-height: 40px;
-}
-
-.fund-card__info {
+.fund-card {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  flex: 1;
-  min-width: 0;
+  gap: var(--gap-sm);
 }
 
-.fund-card__name-row {
+.fund-card__top {
   display: flex;
   align-items: center;
   gap: var(--gap-sm);
@@ -23,12 +13,16 @@
 .fund-card__name {
   font-size: 0.875rem;
   font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
-.fund-card__meta {
+.fund-card__mid {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gap-md);
+}
+
+.fund-card__price {
   display: flex;
   align-items: center;
   gap: var(--gap-sm);
@@ -39,17 +33,10 @@
   color: var(--text-secondary);
 }
 
-.fund-card__right {
-  display: flex;
-  align-items: center;
-  gap: var(--gap-md);
-}
-
 .fund-card__return {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 2px;
+  align-items: center;
+  gap: var(--gap-xs);
 }
 
 .fund-card__return-label {
@@ -59,8 +46,13 @@
   letter-spacing: 0.5px;
 }
 
-.fund-card__benchmark {
+.fund-card__sparkline {
   width: 100%;
+}
+
+.fund-card__sparkline .sparkline-chart {
+  width: 100%;
+  height: auto;
 }
 
 .fund-card__benchmark-text {

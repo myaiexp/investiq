@@ -89,11 +89,6 @@ export default function UpdateTracker() {
                 <div key={entry.id} className="update-tracker__entry">
                   <h4 className="update-tracker__entry-title">
                     {t(entry.titleKey)}
-                    <span
-                      className={`update-tracker__entry-category update-tracker__entry-category--${entry.category}`}
-                    >
-                      {entry.category}
-                    </span>
                   </h4>
                   <span className="update-tracker__entry-date">
                     {formatFinnishDate(entry.date)}

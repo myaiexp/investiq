@@ -25,6 +25,9 @@ export default function IndexDetailPage() {
   const { t } = useTranslation();
   const [index, setIndex] = useState<IndexMeta | null>(null);
   const [ohlcv, setOhlcv] = useState<OHLCVBar[]>([]);
+  const [dataTransitionTimestamp, setDataTransitionTimestamp] = useState<
+    number | null
+  >(null);
   const [indicators, setIndicators] = useState<IndicatorData[]>([]);
   const [signal, setSignal] = useState<SignalSummary | null>(null);
   const [period, setPeriod] = useState<Period>("1y");
@@ -47,7 +50,10 @@ export default function IndexDetailPage() {
   // Load OHLCV + indicators when period/interval changes
   useEffect(() => {
     if (!ticker) return;
-    api.getOHLCV(ticker, period, interval).then((res) => setOhlcv(res.bars));
+    api.getOHLCV(ticker, period, interval).then((res) => {
+      setOhlcv(res.bars);
+      setDataTransitionTimestamp(res.dataTransitionTimestamp ?? null);
+    });
     api.getIndicators(ticker, period, interval).then(setIndicators);
   }, [ticker, period, interval]);
 
@@ -119,6 +125,9 @@ export default function IndexDetailPage() {
         <h2 className="index-detail__title">{index.name}</h2>
         <span className="index-detail__price number">
           {index.price.toLocaleString("fi-FI", { minimumFractionDigits: 2 })}
+          {index.currency && (
+            <span className="index-detail__currency"> {index.currency}</span>
+          )}
         </span>
       </header>
 
@@ -137,6 +146,7 @@ export default function IndexDetailPage() {
             data={ohlcv}
             indicators={indicators}
             enabledIndicators={enabledIndicators}
+            dataTransitionTimestamp={dataTransitionTimestamp ?? undefined}
           />
           {filteredSignal && (
             <div className="index-detail__signal-mobile">

@@ -23,6 +23,9 @@ export default function IndexCard({ index, sparklineData, expanded }: IndexCardP
         <div className="index-card__price">
           <span className="index-card__nav number">
             {index.price.toLocaleString("fi-FI", { minimumFractionDigits: 2 })}
+            {index.currency && (
+              <span className="index-card__currency"> {index.currency}</span>
+            )}
           </span>
           <PriceChange value={index.dailyChange} size="sm" />
         </div>

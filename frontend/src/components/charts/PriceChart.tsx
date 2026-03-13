@@ -1,5 +1,9 @@
 import { useEffect } from "react";
-import { CandlestickSeries, HistogramSeries } from "lightweight-charts";
+import {
+  CandlestickSeries,
+  HistogramSeries,
+  createSeriesMarkers,
+} from "lightweight-charts";
 import type { UTCTimestamp } from "lightweight-charts";
 import type { OHLCVBar, IndicatorData, IndicatorId } from "../../types/index.ts";
 import { useChart } from "./useChart.ts";
@@ -11,6 +15,7 @@ interface PriceChartProps {
   data: OHLCVBar[];
   indicators: IndicatorData[];
   enabledIndicators: Set<IndicatorId>;
+  dataTransitionTimestamp?: number;
 }
 
 /**
@@ -24,6 +29,7 @@ export default function PriceChart({
   data,
   indicators,
   enabledIndicators,
+  dataTransitionTimestamp,
 }: PriceChartProps) {
   const { chartRef, containerRef } = useChart();
 
@@ -68,18 +74,39 @@ export default function PriceChart({
 
     candleSeries.setData(candleData);
     volSeries.setData(volData);
+
+    // Data transition marker: shows where backfilled data ends and live 1m-aggregated begins
+    let transitionMarkers: { setMarkers: (m: never[]) => void } | null = null;
+    if (dataTransitionTimestamp) {
+      // Find the nearest bar at or after the transition timestamp
+      const nearestBar = candleData.find(
+        (b) => (b.time as number) >= dataTransitionTimestamp,
+      );
+      if (nearestBar) {
+        transitionMarkers = createSeriesMarkers(candleSeries, [
+          {
+            time: nearestBar.time,
+            position: "aboveBar",
+            shape: "arrowDown",
+            color: "rgba(148, 163, 184, 0.6)",
+            text: "▸ live",
+          },
+        ]);
+      }
+    }
+
     chart.timeScale().fitContent();
 
     return () => {
-      // Cleanup: remove series when data changes (effect re-runs)
       try {
+        if (transitionMarkers) transitionMarkers.setMarkers([]);
         chart.removeSeries(candleSeries);
         chart.removeSeries(volSeries);
       } catch {
         // Chart may already be destroyed
       }
     };
-  }, [chartRef, data]);
+  }, [chartRef, data, dataTransitionTimestamp]);
 
   // Delegate indicator series management
   useIndicatorSeries(chartRef.current, indicators, enabledIndicators);

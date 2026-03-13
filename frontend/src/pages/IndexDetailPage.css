@@ -26,6 +26,11 @@
   color: var(--text-secondary);
 }
 
+.index-detail__currency {
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
 .index-detail__controls {
   display: flex;
   gap: var(--gap-md);

@@ -116,8 +116,8 @@ async def test_fetch_wraps_in_thread():
 
 
 @pytest.mark.asyncio
-async def test_timezone_stripped_from_dates():
-    """Timezone-aware dates are normalized to UTC then stripped."""
+async def test_timezone_normalized_to_utc():
+    """Timezone-aware dates are normalized to UTC (tz-aware for DateTime(tz) columns)."""
     dates = pd.date_range("2024-01-01", periods=2, freq="D", tz="US/Eastern")
     df = pd.DataFrame(
         {
@@ -136,8 +136,8 @@ async def test_timezone_stripped_from_dates():
 
         result = await fetch_index_ohlcv("^GSPC", "1y", "1D")
 
-    # Date column should be timezone-naive
-    assert result["Date"].dt.tz is None
+    # Date column should be UTC timezone-aware
+    assert str(result["Date"].dt.tz) == "UTC"
 
 
 # ---------------------------------------------------------------------------

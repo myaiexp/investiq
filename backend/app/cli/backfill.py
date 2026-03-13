@@ -75,7 +75,7 @@ async def backfill_index(ticker: str, session: AsyncSession) -> dict:
             rows.append(
                 {
                     "ticker": ticker,
-                    "date": row["Date"],  # full datetime, preserves intraday timestamps
+                    "date": row["Date"].to_pydatetime() if hasattr(row["Date"], "to_pydatetime") else row["Date"],
                     "interval": interval,  # app convention: 1H, 4H, 1D, 1W
                     "open": float(row["Open"]),
                     "high": float(row["High"]),

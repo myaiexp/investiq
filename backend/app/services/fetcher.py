@@ -38,9 +38,11 @@ INTERVAL_MAP: dict[str, str] = {
 
 
 def _normalize_dates(df: pd.DataFrame) -> pd.DataFrame:
-    """Convert timezone-aware DatetimeIndex to UTC then strip timezone."""
+    """Convert timezone-aware DatetimeIndex to UTC. Keep tz for DateTime(tz) columns."""
     if df.index.tz is not None:
-        df.index = df.index.tz_convert("UTC").tz_localize(None)
+        df.index = df.index.tz_convert("UTC")
+    else:
+        df.index = df.index.tz_localize("UTC")
     return df
 
 

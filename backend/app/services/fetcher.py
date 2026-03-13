@@ -95,6 +95,10 @@ async def fetch_index_ohlcv(ticker: str, period: str, interval: str) -> pd.DataF
     # Move Date from index to column
     df = df.reset_index()
 
+    # yfinance uses "Datetime" for intraday data, "Date" for daily — normalize
+    if "Datetime" in df.columns and "Date" not in df.columns:
+        df = df.rename(columns={"Datetime": "Date"})
+
     # Keep only the columns we need
     cols = ["Date", "Open", "High", "Low", "Close", "Volume"]
     df = df[[c for c in cols if c in df.columns]]

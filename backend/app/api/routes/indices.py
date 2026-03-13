@@ -21,6 +21,12 @@ from app.schemas.indices import (
 
 router = APIRouter(prefix="/indices", tags=["indices"])
 
+# Known data quality issues — temporary until better data sources are added
+INDEX_DATA_NOTES: dict[str, str] = {
+    "URTH": "ETF proxy — price shown is URTH ETF ($), not the MSCI World index value (~4,350)",
+    "OBX.OL": "Total return index (includes dividends), not the price-only OBX",
+}
+
 # Period string → number of days
 PERIOD_DAYS: dict[str, int] = {
     "1m": 30,
@@ -62,6 +68,7 @@ async def list_indices(db: AsyncSession = Depends(get_db)):
             price=row.price or 0.0,
             daily_change=row.daily_change or 0.0,
             signal=row.signal or "hold",
+            data_note=INDEX_DATA_NOTES.get(row.ticker),
         )
         for row in rows
     ]

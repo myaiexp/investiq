@@ -10,6 +10,7 @@ class IndexMetaResponse(BaseModel):
     price: float
     daily_change: float = Field(serialization_alias="dailyChange")
     signal: str
+    data_note: str | None = Field(default=None, serialization_alias="dataNote")
 
 
 class OHLCVBarResponse(BaseModel):

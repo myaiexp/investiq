@@ -17,6 +17,25 @@ from app.schemas.funds import (
 
 router = APIRouter(prefix="/funds", tags=["funds"])
 
+# Known data quality issues — temporary until better data sources are added
+FUND_DATA_NOTES: dict[str, str] = {
+    "0P00000N9R.F": "NAV may be inaccurate — Morningstar ticker returns wrong share class (shows ~16\u20ac, actual ~37\u20ac)",
+    "0P0001HOZS.F": "Shows C share class NAV, official default class NAV differs slightly",
+}
+
+FUND_PERF_NOTES: dict[str, dict[str, str]] = {
+    "_all": {
+        "ter": "Unavailable from current data source",
+        "5y": "Insufficient historical data",
+    },
+}
+
+# Funds with broken benchmark data
+FUND_BENCHMARK_NOTES: dict[str, str] = {
+    "0P00000N9R.F": "No free ticker available for Bloomberg Euro Aggregate",
+    "0P0001HOZS.F": "No free ticker available for Bloomberg Euro Green Bond",
+}
+
 # Period string → number of days
 PERIOD_DAYS: dict[str, int] = {
     "1m": 30,
@@ -61,6 +80,7 @@ async def list_funds(db: AsyncSession = Depends(get_db)):
             nav=row.nav or 0.0,
             daily_change=row.daily_change or 0.0,
             return_1y=row.return_1y or 0.0,
+            data_note=FUND_DATA_NOTES.get(row.ticker),
         )
         for row in rows
     ]
@@ -78,6 +98,12 @@ async def get_fund_performance(ticker: str, db: AsyncSession = Depends(get_db)):
     if perf is None:
         raise HTTPException(status_code=404, detail=f"No performance data for fund '{ticker}'")
 
+    notes: dict[str, str] = {}
+    notes.update(FUND_PERF_NOTES.get("_all", {}))
+    notes.update(FUND_PERF_NOTES.get(ticker, {}))
+    if ticker in FUND_BENCHMARK_NOTES:
+        notes["benchmark"] = FUND_BENCHMARK_NOTES[ticker]
+
     return FundPerformanceResponse(
         returns={
             "1y": perf.returns_1y or 0.0,
@@ -93,6 +119,7 @@ async def get_fund_performance(ticker: str, db: AsyncSession = Depends(get_db)):
         sharpe=perf.sharpe or 0.0,
         max_drawdown=perf.max_drawdown or 0.0,
         ter=perf.ter or 0.0,
+        data_notes=notes or None,
     )
 
 

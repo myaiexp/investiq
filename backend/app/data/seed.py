@@ -1,6 +1,6 @@
 import logging
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.market_data import Fund, Index
@@ -9,15 +9,15 @@ logger = logging.getLogger(__name__)
 
 SEED_INDICES: list[dict] = [
     {"name": "OMXH25", "ticker": "^OMXH25", "region": "nordic"},
-    {"name": "OMXS30", "ticker": "^OMXS30", "region": "nordic"},
+    {"name": "OMXS30", "ticker": "^OMX", "region": "nordic"},
     {"name": "OMXC25", "ticker": "^OMXC25", "region": "nordic"},
-    {"name": "OBX", "ticker": "OBX.OL", "region": "nordic"},
+    {"name": "OBX (TR)", "ticker": "OBX.OL", "region": "nordic"},
     {"name": "S&P 500", "ticker": "^GSPC", "region": "global"},
     {"name": "NASDAQ-100", "ticker": "^NDX", "region": "global"},
     {"name": "DAX 40", "ticker": "^GDAXI", "region": "global"},
     {"name": "FTSE 100", "ticker": "^FTSE", "region": "global"},
     {"name": "Nikkei 225", "ticker": "^N225", "region": "global"},
-    {"name": "MSCI World", "ticker": "URTH", "region": "global"},
+    {"name": "MSCI World (URTH)", "ticker": "URTH", "region": "global"},
 ]
 
 SEED_FUNDS: list[dict] = [
@@ -66,7 +66,7 @@ SEED_FUNDS: list[dict] = [
         "ticker": "0P0001JWUW.F",
         "isin": None,
         "fund_type": "equity",
-        "benchmark_ticker": "^OMXS30",
+        "benchmark_ticker": "^OMX",
         "benchmark_name": "OMXS30",
     },
 ]
@@ -87,6 +87,26 @@ INDICATOR_CATEGORIES: dict[str, str] = {
 
 async def seed_database(session: AsyncSession) -> None:
     """Insert missing indices and funds. Skip existing by ticker."""
+    # --- Rename existing records (idempotent) ---
+    # OMXS30 ticker: ^OMXS30 → ^OMX
+    await session.execute(
+        update(Index).where(Index.ticker == "^OMXS30").values(ticker="^OMX")
+    )
+    # MSCI World name clarification
+    await session.execute(
+        update(Index).where(Index.name == "MSCI World").values(name="MSCI World (URTH)")
+    )
+    # OBX name clarification (Total Return index)
+    await session.execute(
+        update(Index).where(Index.name == "OBX").values(name="OBX (TR)")
+    )
+    # Fund benchmark ticker: ^OMXS30 → ^OMX
+    await session.execute(
+        update(Fund)
+        .where(Fund.benchmark_ticker == "^OMXS30")
+        .values(benchmark_ticker="^OMX")
+    )
+
     existing_indices = set(
         (await session.execute(select(Index.ticker))).scalars().all()
     )

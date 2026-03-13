@@ -129,10 +129,11 @@ TODAY = date(2026, 3, 12)
 TODAY_DT = datetime(2026, 3, 12, tzinfo=UTC)
 
 
-def _make_index(name, ticker, region, price=100.0):
+def _make_index(name, ticker, region, price=100.0, currency=None):
     return FakeObj(
         id=abs(hash(ticker)) % 10000,
         name=name, ticker=ticker, region=region,
+        currency=currency,
         price=price, daily_change=1.5, signal="buy",
     )
 
@@ -194,8 +195,8 @@ def _make_fund_performance(ticker):
 
 # Seed data used across tests
 SEED_INDICES = [
-    _make_index("OMXH25", "^OMXH25", "nordic"),
-    _make_index("S&P 500", "^GSPC", "global", 5200.0),
+    _make_index("OMXH25", "^OMXH25", "nordic", currency="EUR"),
+    _make_index("S&P 500", "^GSPC", "global", 5200.0, currency="USD"),
 ]
 
 SEED_OHLCV = [

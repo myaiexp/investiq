@@ -68,6 +68,7 @@ async def list_indices(db: AsyncSession = Depends(get_db)):
             price=row.price or 0.0,
             daily_change=row.daily_change or 0.0,
             signal=row.signal or "hold",
+            currency=row.currency,
             data_note=INDEX_DATA_NOTES.get(row.ticker),
         )
         for row in rows

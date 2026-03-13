@@ -3,21 +3,29 @@ import logging
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.market_data import Fund, Index
+from app.models.market_data import (
+    Fund,
+    FundNAV,
+    FundPerformance,
+    Index,
+    IndicatorData,
+    OHLCVData,
+    SignalData,
+)
 
 logger = logging.getLogger(__name__)
 
 SEED_INDICES: list[dict] = [
-    {"name": "OMXH25", "ticker": "^OMXH25", "region": "nordic"},
-    {"name": "OMXS30", "ticker": "^OMX", "region": "nordic"},
-    {"name": "OMXC25", "ticker": "^OMXC25", "region": "nordic"},
-    {"name": "OBX (TR)", "ticker": "OBX.OL", "region": "nordic"},
-    {"name": "S&P 500", "ticker": "^GSPC", "region": "global"},
-    {"name": "NASDAQ-100", "ticker": "^NDX", "region": "global"},
-    {"name": "DAX 40", "ticker": "^GDAXI", "region": "global"},
-    {"name": "FTSE 100", "ticker": "^FTSE", "region": "global"},
-    {"name": "Nikkei 225", "ticker": "^N225", "region": "global"},
-    {"name": "MSCI World (URTH)", "ticker": "URTH", "region": "global"},
+    {"name": "OMXH25", "ticker": "^OMXH25", "region": "nordic", "currency": "EUR"},
+    {"name": "OMXS30", "ticker": "^OMX", "region": "nordic", "currency": "SEK"},
+    {"name": "OMXC25", "ticker": "^OMXC25", "region": "nordic", "currency": "DKK"},
+    {"name": "OBX (TR)", "ticker": "OBX.OL", "region": "nordic", "currency": "NOK"},
+    {"name": "S&P 500", "ticker": "^GSPC", "region": "global", "currency": "USD"},
+    {"name": "NASDAQ-100", "ticker": "^NDX", "region": "global", "currency": "USD"},
+    {"name": "DAX 40", "ticker": "^GDAXI", "region": "global", "currency": "EUR"},
+    {"name": "FTSE 100", "ticker": "^FTSE", "region": "global", "currency": "GBP"},
+    {"name": "Nikkei 225", "ticker": "^N225", "region": "global", "currency": "JPY"},
+    {"name": "MSCI World (URTH)", "ticker": "URTH", "region": "global", "currency": "USD"},
 ]
 
 SEED_FUNDS: list[dict] = [
@@ -26,8 +34,8 @@ SEED_FUNDS: list[dict] = [
         "ticker": "0P00000N9Y.F",
         "isin": "FI0008805031",
         "fund_type": "equity",
-        "benchmark_ticker": "^STOXX50E",
-        "benchmark_name": "EURO STOXX 50",
+        "benchmark_ticker": "IEUR",
+        "benchmark_name": "MSCI Europe",
     },
     {
         "name": "ÅAB Norden Aktie EUR",
@@ -46,19 +54,19 @@ SEED_FUNDS: list[dict] = [
         "benchmark_name": "MSCI World",
     },
     {
-        "name": "ÅAB Euro Bond A",
-        "ticker": "0P00000N9R.F",
+        "name": "ÅAB Euro Bond B",
+        "ticker": "0P00000N9Q.F",
         "isin": "FI0008805007",
         "fund_type": "bond",
-        "benchmark_ticker": None,
-        "benchmark_name": "Bloomberg Euro Aggregate",
+        "benchmark_ticker": "SYBA.DE",
+        "benchmark_name": "Bloomberg Euro Aggregate Bond",
     },
     {
         "name": "ÅAB Green Bond ESG C",
         "ticker": "0P0001HOZS.F",
         "isin": None,
         "fund_type": "bond",
-        "benchmark_ticker": None,
+        "benchmark_ticker": "GRON.DE",
         "benchmark_name": "Bloomberg Euro Green Bond",
     },
     {
@@ -68,6 +76,14 @@ SEED_FUNDS: list[dict] = [
         "fund_type": "equity",
         "benchmark_ticker": "^OMX",
         "benchmark_name": "OMXS30",
+    },
+    {
+        "name": "ÅAB Varainhoito B",
+        "ticker": "0P00001CPE.F",
+        "isin": "FI0008809934",
+        "fund_type": "balanced",
+        "benchmark_ticker": None,
+        "benchmark_name": "",
     },
 ]
 
@@ -106,6 +122,46 @@ async def seed_database(session: AsyncSession) -> None:
         .where(Fund.benchmark_ticker == "^OMXS30")
         .values(benchmark_ticker="^OMX")
     )
+
+    # --- Phase 3 ticker migrations (idempotent) ---
+
+    # Euro Bond: swap ticker A → B across all tables
+    old_eb, new_eb = "0P00000N9R.F", "0P00000N9Q.F"
+    await session.execute(
+        update(Fund).where(Fund.ticker == old_eb).values(
+            ticker=new_eb,
+            name="ÅAB Euro Bond B",
+            benchmark_ticker="SYBA.DE",
+            benchmark_name="Bloomberg Euro Aggregate Bond",
+        )
+    )
+    await session.execute(update(OHLCVData).where(OHLCVData.ticker == old_eb).values(ticker=new_eb))
+    await session.execute(update(IndicatorData).where(IndicatorData.ticker == old_eb).values(ticker=new_eb))
+    await session.execute(update(SignalData).where(SignalData.ticker == old_eb).values(ticker=new_eb))
+    await session.execute(update(FundNAV).where(FundNAV.ticker == old_eb).values(ticker=new_eb))
+    await session.execute(update(FundPerformance).where(FundPerformance.ticker == old_eb).values(ticker=new_eb))
+
+    # Europa Aktie B: update benchmark to MSCI Europe
+    await session.execute(
+        update(Fund).where(Fund.ticker == "0P00000N9Y.F").values(
+            benchmark_ticker="IEUR",
+            benchmark_name="MSCI Europe",
+        )
+    )
+
+    # Green Bond ESG C: add benchmark
+    await session.execute(
+        update(Fund).where(Fund.ticker == "0P0001HOZS.F").values(
+            benchmark_ticker="GRON.DE",
+            benchmark_name="Bloomberg Euro Green Bond",
+        )
+    )
+
+    # Index currency: update all
+    for idx in SEED_INDICES:
+        await session.execute(
+            update(Index).where(Index.ticker == idx["ticker"]).values(currency=idx["currency"])
+        )
 
     existing_indices = set(
         (await session.execute(select(Index.ticker))).scalars().all()

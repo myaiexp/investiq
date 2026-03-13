@@ -19,7 +19,6 @@ router = APIRouter(prefix="/funds", tags=["funds"])
 
 # Known data quality issues — temporary until better data sources are added
 FUND_DATA_NOTES: dict[str, str] = {
-    "0P00000N9R.F": "NAV may be inaccurate — Morningstar ticker returns wrong share class (shows ~16\u20ac, actual ~37\u20ac)",
     "0P0001HOZS.F": "Shows C share class NAV, official default class NAV differs slightly",
 }
 
@@ -31,10 +30,7 @@ FUND_PERF_NOTES: dict[str, dict[str, str]] = {
 }
 
 # Funds with broken benchmark data
-FUND_BENCHMARK_NOTES: dict[str, str] = {
-    "0P00000N9R.F": "No free ticker available for Bloomberg Euro Aggregate",
-    "0P0001HOZS.F": "No free ticker available for Bloomberg Euro Green Bond",
-}
+FUND_BENCHMARK_NOTES: dict[str, str] = {}
 
 # Period string → number of days
 PERIOD_DAYS: dict[str, int] = {

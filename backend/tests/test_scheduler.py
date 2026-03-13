@@ -193,7 +193,7 @@ async def test_refresh_fund_with_benchmark():
 
     # Mock the session to return a Fund with benchmark_ticker
     fund_mock = MagicMock()
-    fund_mock.benchmark_ticker = "^STOXX50E"
+    fund_mock.benchmark_ticker = "IEUR"
     fund_mock.ticker = "0P00000N9Y.F"
 
     # First execute returns the fund, subsequent calls return default
@@ -211,7 +211,7 @@ async def test_refresh_fund_with_benchmark():
     # fetch_fund_nav called for the fund
     mock_nav.assert_called()
     # fetch_index_ohlcv called for the benchmark
-    mock_bench.assert_called_once_with("^STOXX50E", "5y", "1D")
+    mock_bench.assert_called_once_with("IEUR", "5y", "1D")
 
 
 @pytest.mark.asyncio

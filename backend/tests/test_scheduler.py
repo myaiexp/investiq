@@ -1,17 +1,19 @@
 """Tests for the scheduler & refresh service."""
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock, call, patch
 
 import numpy as np
 import pandas as pd
 import pytest
 
 from app.services.scheduler import (
-    PERIOD_INTERVAL_MAP,
+    STANDARD_INTERVALS,
     _calculate_performance_metrics,
+    _failure_counts,
     refresh_all,
     refresh_fund,
-    refresh_index,
+    refresh_funds,
+    refresh_indices_1m,
     setup_scheduler,
 )
 
@@ -36,6 +38,26 @@ def _make_ohlcv_df(n: int = 252, base: float = 100.0) -> pd.DataFrame:
             "Low": closes - np.abs(rng.normal(0, 0.5, n)),
             "Close": closes,
             "Volume": np.abs(rng.normal(1_000_000, 200_000, n)).astype(int),
+        }
+    )
+
+
+def _make_1m_ohlcv_df(n: int = 390) -> pd.DataFrame:
+    """Build a 1-minute OHLCV DataFrame (7 days of market hours ~390 bars/day)."""
+    rng = np.random.default_rng(42)
+    # Create minute-level timestamps over a week
+    dates = pd.date_range("2025-03-10 09:30:00", periods=n, freq="min")
+    closes = np.cumsum(rng.normal(0.01, 0.3, n)) + 100.0
+    closes = closes - closes.min() + 50.0
+
+    return pd.DataFrame(
+        {
+            "Date": dates,
+            "Open": closes + rng.normal(0, 0.1, n),
+            "High": closes + np.abs(rng.normal(0, 0.2, n)),
+            "Low": closes - np.abs(rng.normal(0, 0.2, n)),
+            "Close": closes,
+            "Volume": np.abs(rng.normal(100_000, 20_000, n)).astype(int),
         }
     )
 
@@ -101,137 +123,341 @@ def _mock_session():
     return session
 
 
+def _mock_session_factory():
+    """Create a mock session factory that works as: async with factory() as session."""
+    mock_session = _mock_session()
+
+    class _FakeCtx:
+        async def __aenter__(self):
+            return mock_session
+
+        async def __aexit__(self, *args):
+            pass
+
+    factory = MagicMock(side_effect=lambda: _FakeCtx())
+    factory._mock_session = mock_session  # expose for assertions
+    return factory
+
+
 # ---------------------------------------------------------------------------
-# PERIOD_INTERVAL_MAP constant
+# STANDARD_INTERVALS constant
 # ---------------------------------------------------------------------------
 
 
-def test_period_interval_map_structure():
-    """PERIOD_INTERVAL_MAP has the right periods and intervals matching frontend."""
-    expected = {
-        "1m": ["1m", "5m", "15m", "1H", "2H", "4H", "1D"],
-        "3m": ["15m", "1H", "2H", "4H", "1D"],
-        "6m": ["1H", "4H", "1D", "1W"],
-        "1y": ["4H", "1D", "1W"],
-        "5y": ["1D", "1W"],
-    }
-    assert PERIOD_INTERVAL_MAP == expected
+def test_standard_intervals():
+    """STANDARD_INTERVALS has the 6 target intervals for aggregation."""
+    assert STANDARD_INTERVALS == ["5m", "15m", "1H", "4H", "1D", "1W"]
 
 
 # ---------------------------------------------------------------------------
-# refresh_index
+# refresh_indices_1m
 # ---------------------------------------------------------------------------
 
 
 @pytest.mark.asyncio
-async def test_refresh_index_upserts_ohlcv():
-    """OHLCV data is inserted/updated, not duplicated."""
-    ohlcv_df = _make_ohlcv_df(n=50)
+async def test_refresh_indices_fetches_1m():
+    """fetch_index_ohlcv called with '7d' period and '1m' interval."""
+    ohlcv_1m = _make_1m_ohlcv_df(n=100)
+    mock_factory = _mock_session_factory()
+    # Aggregated candles — return some bars for each interval
+    agg_bars = [{"time": 1000, "open": 100, "high": 101, "low": 99, "close": 100.5, "volume": 5000}]
     indicators = _make_indicator_result()
-    session = _mock_session()
 
     with (
-        patch("app.services.scheduler.fetch_index_ohlcv", return_value=ohlcv_df) as mock_fetch,
+        patch("app.services.scheduler.fetch_index_ohlcv", return_value=ohlcv_1m) as mock_fetch,
+        patch("app.services.scheduler.aggregate_candles", return_value=agg_bars),
         patch("app.services.scheduler.calculate_indicators", return_value=indicators),
         patch("app.services.scheduler.generate_signal", return_value="hold"),
         patch("app.services.scheduler.aggregate_signals", return_value="hold"),
+        patch("app.services.scheduler.SEED_INDICES", [{"ticker": "^GSPC"}]),
     ):
-        await refresh_index("^GSPC", session)
+        result = await refresh_indices_1m(mock_factory)
 
-    # fetch_index_ohlcv called with 1y/1D (the only combo we actually fetch for now)
-    mock_fetch.assert_called_once_with("^GSPC", "1y", "1D")
-
-    # session.execute called multiple times for upserts (OHLCV, indicators, signals, index update)
-    assert session.execute.call_count >= 1
-    assert session.commit.call_count >= 1
+    # Verify fetch called with 7d/1m
+    mock_fetch.assert_called_with("^GSPC", "7d", "1m")
+    assert result["indices_refreshed"] == 1
+    assert result["errors"] == []
 
 
 @pytest.mark.asyncio
-async def test_refresh_index_skips_empty_fetch():
-    """If fetcher returns empty DataFrame, skip indicator calculation."""
-    session = _mock_session()
+async def test_refresh_indices_aggregates_standard_intervals():
+    """Aggregated OHLCV produced for 5m, 15m, 1H, 4H, 1D, 1W."""
+    ohlcv_1m = _make_1m_ohlcv_df(n=100)
+    mock_factory = _mock_session_factory()
+    agg_bars = [{"time": 1000, "open": 100, "high": 101, "low": 99, "close": 100.5, "volume": 5000}]
+    indicators = _make_indicator_result()
 
     with (
-        patch("app.services.scheduler.fetch_index_ohlcv", return_value=pd.DataFrame()),
-        patch("app.services.scheduler.calculate_indicators") as mock_calc,
+        patch("app.services.scheduler.fetch_index_ohlcv", return_value=ohlcv_1m),
+        patch("app.services.scheduler.aggregate_candles", return_value=agg_bars) as mock_agg,
+        patch("app.services.scheduler.calculate_indicators", return_value=indicators),
+        patch("app.services.scheduler.generate_signal", return_value="hold"),
+        patch("app.services.scheduler.aggregate_signals", return_value="hold"),
+        patch("app.services.scheduler.SEED_INDICES", [{"ticker": "^GSPC"}]),
     ):
-        await refresh_index("^GSPC", session)
+        await refresh_indices_1m(mock_factory)
 
-    mock_calc.assert_not_called()
+    # aggregate_candles called for each of the 6 standard intervals
+    agg_intervals = [c.args[1] for c in mock_agg.call_args_list]
+    for interval in STANDARD_INTERVALS:
+        assert interval in agg_intervals, f"Missing aggregation for {interval}"
+
+
+@pytest.mark.asyncio
+async def test_refresh_indices_computes_indicators_1d_only():
+    """Indicators and signals computed and stored for 1D interval only."""
+    ohlcv_1m = _make_1m_ohlcv_df(n=100)
+    mock_factory = _mock_session_factory()
+    # Return enough 1D bars for indicator calculation
+    agg_bars_1d = [
+        {"time": 1000 + i * 86400, "open": 100 + i, "high": 101 + i, "low": 99 + i, "close": 100.5 + i, "volume": 5000}
+        for i in range(50)
+    ]
+    # Other intervals return just one bar
+    agg_bars_other = [{"time": 1000, "open": 100, "high": 101, "low": 99, "close": 100.5, "volume": 5000}]
+    indicators = _make_indicator_result()
+
+    def mock_agg(bars, interval):
+        if interval == "1D":
+            return agg_bars_1d
+        return agg_bars_other
+
+    with (
+        patch("app.services.scheduler.fetch_index_ohlcv", return_value=ohlcv_1m),
+        patch("app.services.scheduler.aggregate_candles", side_effect=mock_agg),
+        patch("app.services.scheduler.calculate_indicators", return_value=indicators) as mock_calc,
+        patch("app.services.scheduler.generate_signal", return_value="hold") as mock_gen_sig,
+        patch("app.services.scheduler.aggregate_signals", return_value="hold"),
+        patch("app.services.scheduler.SEED_INDICES", [{"ticker": "^GSPC"}]),
+    ):
+        await refresh_indices_1m(mock_factory)
+
+    # calculate_indicators called exactly once (for 1D)
+    mock_calc.assert_called_once()
+    # generate_signal called for each indicator
+    assert mock_gen_sig.call_count == len(indicators)
+
+
+@pytest.mark.asyncio
+async def test_refresh_indices_upserts_datetime_not_date():
+    """OHLCV upsert uses datetime (preserving time) not date()."""
+    ohlcv_1m = _make_1m_ohlcv_df(n=10)
+    mock_factory = _mock_session_factory()
+    mock_session = mock_factory._mock_session
+    agg_bars = [{"time": 1000, "open": 100, "high": 101, "low": 99, "close": 100.5, "volume": 5000}]
+    indicators = _make_indicator_result()
+
+    with (
+        patch("app.services.scheduler.fetch_index_ohlcv", return_value=ohlcv_1m),
+        patch("app.services.scheduler.aggregate_candles", return_value=agg_bars),
+        patch("app.services.scheduler.calculate_indicators", return_value=indicators),
+        patch("app.services.scheduler.generate_signal", return_value="hold"),
+        patch("app.services.scheduler.aggregate_signals", return_value="hold"),
+        patch("app.services.scheduler.SEED_INDICES", [{"ticker": "^GSPC"}]),
+        patch("app.services.scheduler.pg_insert") as mock_pg_insert,
+    ):
+        # Make pg_insert return a mock that supports chaining
+        mock_stmt = MagicMock()
+        mock_stmt.on_conflict_do_update.return_value = mock_stmt
+        mock_pg_insert.return_value = MagicMock()
+        mock_pg_insert.return_value.values.return_value = mock_stmt
+
+        await refresh_indices_1m(mock_factory)
+
+    # Check that first call to pg_insert().values() has datetime objects in 'date' field
+    # (not date objects from .date() call)
+    values_calls = mock_pg_insert.return_value.values.call_args_list
+    if values_calls:
+        first_rows = values_calls[0].args[0] if values_calls[0].args else values_calls[0].kwargs.get("rows", [])
+        if first_rows:
+            for row in first_rows:
+                if "date" in row:
+                    from datetime import datetime
+                    assert isinstance(row["date"], datetime), (
+                        f"Expected datetime, got {type(row['date'])}"
+                    )
 
 
 # ---------------------------------------------------------------------------
-# refresh_fund
+# refresh_funds
 # ---------------------------------------------------------------------------
 
 
 @pytest.mark.asyncio
-async def test_refresh_fund_calculates_returns():
-    """1y/3y/5y returns computed correctly from NAV history."""
-    nav_df = _make_nav_df(n=1260)
-    benchmark_df = _make_ohlcv_df(n=1260)
-    session = _mock_session()
+async def test_refresh_funds_processes_all():
+    """All 7 funds processed (including new Varainhoito)."""
+    refreshed = []
+
+    async def mock_refresh_fund(ticker, session):
+        refreshed.append(ticker)
+
+    mock_factory = _mock_session_factory()
 
     with (
-        patch("app.services.scheduler.fetch_fund_nav", return_value=nav_df),
-        patch("app.services.scheduler.fetch_fund_info", return_value={"annualReportExpenseRatio": 0.015}),
-        patch("app.services.scheduler.fetch_index_ohlcv", return_value=benchmark_df),
+        patch("app.services.scheduler.refresh_fund", side_effect=mock_refresh_fund),
+        patch(
+            "app.services.scheduler.SEED_FUNDS",
+            [{"ticker": f"FUND{i}"} for i in range(7)],
+        ),
     ):
-        await refresh_fund("0P00000N9Y.F", session)
+        result = await refresh_funds(mock_factory)
 
-    # Should have executed upserts and committed
-    assert session.execute.call_count >= 1
-    assert session.commit.call_count >= 1
-
-
-@pytest.mark.asyncio
-async def test_refresh_fund_with_benchmark():
-    """Fund with benchmark_ticker also fetches benchmark data."""
-    nav_df = _make_nav_df(n=1260)
-    benchmark_df = _make_nav_df(n=1260)
-    session = _mock_session()
-
-    # Mock the session to return a Fund with benchmark_ticker
-    fund_mock = MagicMock()
-    fund_mock.benchmark_ticker = "IEUR"
-    fund_mock.ticker = "0P00000N9Y.F"
-
-    # First execute returns the fund, subsequent calls return default
-    result_mock = MagicMock()
-    result_mock.scalar_one_or_none.return_value = fund_mock
-    session.execute.return_value = result_mock
-
-    with (
-        patch("app.services.scheduler.fetch_fund_nav", return_value=nav_df) as mock_nav,
-        patch("app.services.scheduler.fetch_fund_info", return_value={}),
-        patch("app.services.scheduler.fetch_index_ohlcv", return_value=benchmark_df) as mock_bench,
-    ):
-        await refresh_fund("0P00000N9Y.F", session)
-
-    # fetch_fund_nav called for the fund
-    mock_nav.assert_called()
-    # fetch_index_ohlcv called for the benchmark
-    mock_bench.assert_called_once_with("IEUR", "5y", "1D")
-
-
-@pytest.mark.asyncio
-async def test_refresh_fund_skips_empty_nav():
-    """If NAV fetch returns empty, skip performance calculation."""
-    session = _mock_session()
-
-    with (
-        patch("app.services.scheduler.fetch_fund_nav", return_value=pd.DataFrame()),
-        patch("app.services.scheduler.fetch_fund_info", return_value={}),
-    ):
-        await refresh_fund("0P00000N9Y.F", session)
-
-    # No upserts should happen (only the fund lookup query if any)
-    # Commit still called since the function completes normally
-    assert session.commit.call_count <= 1
+    assert len(refreshed) == 7
+    assert result["funds_refreshed"] == 7
+    assert result["errors"] == []
 
 
 # ---------------------------------------------------------------------------
-# Performance metrics
+# setup_scheduler — two jobs
+# ---------------------------------------------------------------------------
+
+
+def test_scheduler_two_jobs():
+    """setup_scheduler creates two separate interval jobs."""
+    mock_factory = MagicMock()
+
+    with patch("app.services.scheduler.AsyncIOScheduler") as MockScheduler:
+        mock_instance = MagicMock()
+        MockScheduler.return_value = mock_instance
+
+        scheduler = setup_scheduler(mock_factory, index_interval=15, fund_interval=60)
+
+    assert scheduler is mock_instance
+    # Two jobs added
+    assert mock_instance.add_job.call_count == 2
+
+    # Extract job IDs
+    job_ids = [c.kwargs.get("id") or c[1].get("id", "") for c in mock_instance.add_job.call_args_list]
+    assert "refresh_indices" in job_ids
+    assert "refresh_funds" in job_ids
+
+
+# ---------------------------------------------------------------------------
+# Consecutive failure tracking
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_consecutive_failure_tracking():
+    """After 3 failures, warning logged. Counter resets on success."""
+    # Clear any previous state
+    _failure_counts.clear()
+
+    call_count = {"n": 0}
+
+    async def failing_refresh(ticker, session):
+        call_count["n"] += 1
+        if call_count["n"] <= 3:
+            raise Exception("Simulated error")
+        # 4th call succeeds
+
+    mock_factory = _mock_session_factory()
+
+    with (
+        patch("app.services.scheduler.refresh_fund", side_effect=failing_refresh),
+        patch("app.services.scheduler.SEED_FUNDS", [{"ticker": "FUND0"}]),
+        patch("app.services.scheduler.logger") as mock_logger,
+    ):
+        # Run 3 times — should log warning on 3rd failure
+        for _ in range(3):
+            await refresh_funds(mock_factory)
+
+        # Check that a warning about consecutive failures was logged
+        warning_calls = [
+            c for c in mock_logger.warning.call_args_list
+            if "consecutive" in str(c).lower()
+        ]
+        assert len(warning_calls) >= 1, "Expected warning about consecutive failures"
+
+        # Now succeed (4th call)
+        await refresh_funds(mock_factory)
+
+    # Counter should be reset
+    assert _failure_counts.get("fund:FUND0", 0) == 0
+
+
+# ---------------------------------------------------------------------------
+# Partial data upserted
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_partial_data_upserted():
+    """Partial yfinance response is upserted (not rejected)."""
+    # Only 5 bars — much less than typical, but should still be processed
+    ohlcv_1m = _make_1m_ohlcv_df(n=5)
+    mock_factory = _mock_session_factory()
+    agg_bars = [{"time": 1000, "open": 100, "high": 101, "low": 99, "close": 100.5, "volume": 5000}]
+    indicators = _make_indicator_result()
+
+    with (
+        patch("app.services.scheduler.fetch_index_ohlcv", return_value=ohlcv_1m),
+        patch("app.services.scheduler.aggregate_candles", return_value=agg_bars),
+        patch("app.services.scheduler.calculate_indicators", return_value=indicators),
+        patch("app.services.scheduler.generate_signal", return_value="hold"),
+        patch("app.services.scheduler.aggregate_signals", return_value="hold"),
+        patch("app.services.scheduler.SEED_INDICES", [{"ticker": "^GSPC"}]),
+    ):
+        result = await refresh_indices_1m(mock_factory)
+
+    # Should still succeed with partial data
+    assert result["indices_refreshed"] == 1
+    assert result["errors"] == []
+
+
+# ---------------------------------------------------------------------------
+# refresh_all — combines both
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_refresh_all_processes_all_tickers():
+    """All 10 indices and 7 funds are processed."""
+    mock_factory = _mock_session_factory()
+
+    with (
+        patch(
+            "app.services.scheduler.refresh_indices_1m",
+            return_value={"indices_refreshed": 10, "errors": []},
+        ) as mock_idx,
+        patch(
+            "app.services.scheduler.refresh_funds",
+            return_value={"funds_refreshed": 7, "errors": []},
+        ) as mock_funds,
+    ):
+        result = await refresh_all(mock_factory)
+
+    mock_idx.assert_called_once_with(mock_factory)
+    mock_funds.assert_called_once_with(mock_factory)
+    assert result["indices_refreshed"] == 10
+    assert result["funds_refreshed"] == 7
+    assert result["errors"] == []
+
+
+@pytest.mark.asyncio
+async def test_refresh_all_combines_errors():
+    """refresh_all combines errors from both sub-refreshes."""
+    mock_factory = _mock_session_factory()
+
+    with (
+        patch(
+            "app.services.scheduler.refresh_indices_1m",
+            return_value={"indices_refreshed": 9, "errors": ["index:^GSPC"]},
+        ),
+        patch(
+            "app.services.scheduler.refresh_funds",
+            return_value={"funds_refreshed": 6, "errors": ["fund:FUND0"]},
+        ),
+    ):
+        result = await refresh_all(mock_factory)
+
+    assert result["indices_refreshed"] == 9
+    assert result["funds_refreshed"] == 6
+    assert result["errors"] == ["index:^GSPC", "fund:FUND0"]
+
+
+# ---------------------------------------------------------------------------
+# Performance metrics (unchanged)
 # ---------------------------------------------------------------------------
 
 
@@ -305,107 +531,89 @@ def test_performance_metrics_empty_df():
 
 
 # ---------------------------------------------------------------------------
-# refresh_all
+# refresh_fund (individual — legacy tests)
 # ---------------------------------------------------------------------------
 
 
-def _mock_session_factory():
-    """Create a mock session factory that works as: async with factory() as session."""
-    mock_session = _mock_session()
+@pytest.mark.asyncio
+async def test_refresh_fund_calculates_returns():
+    """1y/3y/5y returns computed correctly from NAV history."""
+    nav_df = _make_nav_df(n=1260)
+    benchmark_df = _make_ohlcv_df(n=1260)
+    session = _mock_session()
 
-    class _FakeCtx:
-        async def __aenter__(self):
-            return mock_session
+    with (
+        patch("app.services.scheduler.fetch_fund_nav", return_value=nav_df),
+        patch("app.services.scheduler.fetch_fund_info", return_value={"annualReportExpenseRatio": 0.015}),
+        patch("app.services.scheduler.fetch_index_ohlcv", return_value=benchmark_df),
+    ):
+        await refresh_fund("0P00000N9Y.F", session)
 
-        async def __aexit__(self, *args):
-            pass
-
-    factory = MagicMock(side_effect=lambda: _FakeCtx())
-    factory._mock_session = mock_session  # expose for assertions
-    return factory
+    # Should have executed upserts and committed
+    assert session.execute.call_count >= 1
+    assert session.commit.call_count >= 1
 
 
 @pytest.mark.asyncio
-async def test_refresh_all_processes_all_tickers():
-    """All 10 indices and 6 funds are processed."""
-    refreshed_indices = []
-    refreshed_funds = []
+async def test_refresh_fund_with_benchmark():
+    """Fund with benchmark_ticker also fetches benchmark data."""
+    nav_df = _make_nav_df(n=1260)
+    benchmark_df = _make_nav_df(n=1260)
+    session = _mock_session()
 
-    async def mock_refresh_index(ticker, session):
-        refreshed_indices.append(ticker)
+    # Mock the session to return a Fund with benchmark_ticker
+    fund_mock = MagicMock()
+    fund_mock.benchmark_ticker = "IEUR"
+    fund_mock.ticker = "0P00000N9Y.F"
 
-    async def mock_refresh_fund(ticker, session):
-        refreshed_funds.append(ticker)
-
-    mock_factory = _mock_session_factory()
+    # First execute returns the fund, subsequent calls return default
+    result_mock = MagicMock()
+    result_mock.scalar_one_or_none.return_value = fund_mock
+    session.execute.return_value = result_mock
 
     with (
-        patch("app.services.scheduler.refresh_index", side_effect=mock_refresh_index),
-        patch("app.services.scheduler.refresh_fund", side_effect=mock_refresh_fund),
-        patch("app.services.scheduler.SEED_INDICES", [{"ticker": f"IDX{i}"} for i in range(10)]),
-        patch("app.services.scheduler.SEED_FUNDS", [{"ticker": f"FUND{i}"} for i in range(6)]),
+        patch("app.services.scheduler.fetch_fund_nav", return_value=nav_df) as mock_nav,
+        patch("app.services.scheduler.fetch_fund_info", return_value={}),
+        patch("app.services.scheduler.fetch_index_ohlcv", return_value=benchmark_df) as mock_bench,
     ):
-        result = await refresh_all(mock_factory)
+        await refresh_fund("0P00000N9Y.F", session)
 
-    assert len(refreshed_indices) == 10
-    assert len(refreshed_funds) == 6
-    assert result["indices_refreshed"] == 10
-    assert result["funds_refreshed"] == 6
-    assert result["errors"] == []
+    # fetch_fund_nav called for the fund
+    mock_nav.assert_called()
+    # fetch_index_ohlcv called for the benchmark
+    mock_bench.assert_called_once_with("IEUR", "5y", "1D")
 
 
 @pytest.mark.asyncio
-async def test_individual_failure_doesnt_abort():
-    """If one ticker fails, others still process."""
-    call_count = {"indices": 0, "funds": 0}
-
-    async def mock_refresh_index(ticker, session):
-        call_count["indices"] += 1
-        if ticker == "IDX2":
-            raise Exception("Network error")
-
-    async def mock_refresh_fund(ticker, session):
-        call_count["funds"] += 1
-
-    mock_factory = _mock_session_factory()
+async def test_refresh_fund_skips_empty_nav():
+    """If NAV fetch returns empty, skip performance calculation."""
+    session = _mock_session()
 
     with (
-        patch("app.services.scheduler.refresh_index", side_effect=mock_refresh_index),
-        patch("app.services.scheduler.refresh_fund", side_effect=mock_refresh_fund),
-        patch("app.services.scheduler.SEED_INDICES", [{"ticker": f"IDX{i}"} for i in range(5)]),
-        patch("app.services.scheduler.SEED_FUNDS", [{"ticker": f"FUND{i}"} for i in range(3)]),
+        patch("app.services.scheduler.fetch_fund_nav", return_value=pd.DataFrame()),
+        patch("app.services.scheduler.fetch_fund_info", return_value={}),
     ):
-        result = await refresh_all(mock_factory)
+        await refresh_fund("0P00000N9Y.F", session)
 
-    # All 5 indices attempted (including the failing one)
-    assert call_count["indices"] == 5
-    # All 3 funds still processed despite index failure
-    assert call_count["funds"] == 3
-    # 4 indices succeeded, 1 failed
-    assert result["indices_refreshed"] == 4
-    assert result["funds_refreshed"] == 3
-    assert len(result["errors"]) == 1
-    assert "IDX2" in result["errors"][0]
+    # No upserts should happen (only the fund lookup query if any)
+    # Commit still called since the function completes normally
+    assert session.commit.call_count <= 1
 
 
 # ---------------------------------------------------------------------------
-# setup_scheduler
+# setup_scheduler (legacy test — updated)
 # ---------------------------------------------------------------------------
 
 
 def test_setup_scheduler_returns_scheduler():
-    """setup_scheduler creates and returns an AsyncIOScheduler with a job."""
+    """setup_scheduler creates and returns an AsyncIOScheduler with two jobs."""
     mock_factory = MagicMock()
 
     with patch("app.services.scheduler.AsyncIOScheduler") as MockScheduler:
         mock_instance = MagicMock()
         MockScheduler.return_value = mock_instance
 
-        scheduler = setup_scheduler(mock_factory, interval_minutes=30)
+        scheduler = setup_scheduler(mock_factory, index_interval=15, fund_interval=60)
 
     assert scheduler is mock_instance
-    mock_instance.add_job.assert_called_once()
-    # Verify interval trigger
-    call_args = mock_instance.add_job.call_args
-    trigger = call_args[1].get("trigger") or call_args[0][1] if len(call_args[0]) > 1 else call_args[1].get("trigger")
-    assert trigger is not None
+    assert mock_instance.add_job.call_count == 2

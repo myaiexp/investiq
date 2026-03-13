@@ -25,6 +25,7 @@ from app.models.market_data import (
     OHLCVData,
     SignalData,
 )
+from app.services.aggregator import aggregate_candles
 from app.services.fetcher import fetch_fund_info, fetch_fund_nav, fetch_index_ohlcv
 from app.services.indicators import (
     aggregate_signals,
@@ -35,9 +36,12 @@ from app.services.indicators import (
 logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
-# Period / interval mapping (matches frontend)
+# Constants
 # ---------------------------------------------------------------------------
 
+STANDARD_INTERVALS = ["5m", "15m", "1H", "4H", "1D", "1W"]
+
+# Legacy reference — kept for potential future use
 PERIOD_INTERVAL_MAP: dict[str, list[str]] = {
     "1m": ["1m", "5m", "15m", "1H", "2H", "4H", "1D"],
     "3m": ["15m", "1H", "2H", "4H", "1D"],
@@ -45,6 +49,28 @@ PERIOD_INTERVAL_MAP: dict[str, list[str]] = {
     "1y": ["4H", "1D", "1W"],
     "5y": ["1D", "1W"],
 }
+
+# ---------------------------------------------------------------------------
+# Stale data / failure tracking (in-memory)
+# ---------------------------------------------------------------------------
+
+_failure_counts: dict[str, int] = {}
+_FAILURE_WARN_THRESHOLD = 3
+
+
+def _record_failure(key: str) -> None:
+    """Increment consecutive failure count and log warning at threshold."""
+    _failure_counts[key] = _failure_counts.get(key, 0) + 1
+    count = _failure_counts[key]
+    if count >= _FAILURE_WARN_THRESHOLD:
+        logger.warning(
+            "%s has %d consecutive failures — data may be stale", key, count
+        )
+
+
+def _record_success(key: str) -> None:
+    """Reset consecutive failure counter on success."""
+    _failure_counts.pop(key, None)
 
 
 # ---------------------------------------------------------------------------
@@ -118,41 +144,41 @@ def _calculate_performance_metrics(nav_df: pd.DataFrame) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# refresh_index
+# refresh_indices_1m — new 1m-based index refresh
 # ---------------------------------------------------------------------------
 
 
-async def refresh_index(ticker: str, session: AsyncSession) -> None:
-    """Fetch OHLCV for 1y/1D, compute indicators, store signals.
-
-    Only fetches the 1y/1D combination for now (to limit API calls).
-    The full PERIOD_INTERVAL_MAP is defined for future use.
+async def _refresh_single_index(ticker: str, session: AsyncSession) -> None:
+    """Fetch 1m OHLCV for one index, aggregate, compute indicators/signals.
 
     Steps:
-      1. fetch_index_ohlcv(ticker, "1y", "1D")
-      2. Upsert OHLCV rows into ohlcv_data
-      3. calculate_indicators(ohlcv_df)
-      4. Upsert indicator_data rows
-      5. Generate per-indicator signals, aggregate, upsert signal_data
-      6. Update index row: price, daily_change, signal
+      1. fetch_index_ohlcv(ticker, "7d", "1m")
+      2. Upsert 1m OHLCV rows (datetime in date column, not date())
+      3. Aggregate to STANDARD_INTERVALS using aggregator.aggregate_candles()
+      4. Upsert aggregated OHLCV rows
+      5. Compute indicators for 1D interval only, store in indicator_data
+      6. Generate signals per indicator + aggregate for 1D, store in signal_data
+      7. Update Index row (price, daily_change, signal from latest 1D data)
     """
-    logger.info("Refreshing index %s", ticker)
+    logger.info("Refreshing index %s (1m)", ticker)
 
-    # Step 1: Fetch OHLCV
-    ohlcv_df = await fetch_index_ohlcv(ticker, "1y", "1D")
+    # Step 1: Fetch 1m OHLCV (7-day window)
+    ohlcv_df = await fetch_index_ohlcv(ticker, "7d", "1m")
     if ohlcv_df.empty:
-        logger.warning("No OHLCV data for %s, skipping", ticker)
+        logger.warning("No 1m OHLCV data for %s, skipping", ticker)
         return
 
-    # Step 2: Upsert OHLCV rows
     now = datetime.now(UTC)
-    ohlcv_rows = []
+
+    # Step 2: Upsert raw 1m OHLCV rows (preserve full datetime)
+    ohlcv_1m_rows = []
     for _, row in ohlcv_df.iterrows():
-        ohlcv_rows.append(
+        dt = row["Date"].to_pydatetime() if hasattr(row["Date"], "to_pydatetime") else row["Date"]
+        ohlcv_1m_rows.append(
             {
                 "ticker": ticker,
-                "date": row["Date"].to_pydatetime() if hasattr(row["Date"], "to_pydatetime") else row["Date"],
-                "interval": "1D",
+                "date": dt,
+                "interval": "1m",
                 "open": float(row["Open"]),
                 "high": float(row["High"]),
                 "low": float(row["Low"]),
@@ -162,8 +188,8 @@ async def refresh_index(ticker: str, session: AsyncSession) -> None:
             }
         )
 
-    if ohlcv_rows:
-        stmt = pg_insert(OHLCVData).values(ohlcv_rows)
+    if ohlcv_1m_rows:
+        stmt = pg_insert(OHLCVData).values(ohlcv_1m_rows)
         stmt = stmt.on_conflict_do_update(
             index_elements=["ticker", "date", "interval"],
             set_={
@@ -177,14 +203,87 @@ async def refresh_index(ticker: str, session: AsyncSession) -> None:
         )
         await session.execute(stmt)
 
-    # Step 3: Calculate indicators (needs DatetimeIndex)
-    calc_df = ohlcv_df.copy()
-    calc_df["Date"] = pd.to_datetime(calc_df["Date"])
+    # Step 3: Convert 1m data to bar dicts for aggregator
+    bars_1m = []
+    for _, row in ohlcv_df.iterrows():
+        ts = row["Date"]
+        if hasattr(ts, "timestamp"):
+            unix_s = int(ts.timestamp())
+        else:
+            unix_s = int(pd.Timestamp(ts).timestamp())
+        bars_1m.append(
+            {
+                "time": unix_s,
+                "open": float(row["Open"]),
+                "high": float(row["High"]),
+                "low": float(row["Low"]),
+                "close": float(row["Close"]),
+                "volume": int(row.get("Volume", 0)),
+            }
+        )
+
+    # Aggregate to each standard interval and upsert
+    aggregated_by_interval: dict[str, list[dict]] = {}
+    for interval in STANDARD_INTERVALS:
+        agg_bars = aggregate_candles(bars_1m, interval)
+        aggregated_by_interval[interval] = agg_bars
+
+        # Build OHLCV rows for this interval
+        if agg_bars:
+            interval_rows = []
+            for bar in agg_bars:
+                bar_dt = datetime.fromtimestamp(bar["time"], tz=UTC)
+                interval_rows.append(
+                    {
+                        "ticker": ticker,
+                        "date": bar_dt,
+                        "interval": interval,
+                        "open": float(bar["open"]),
+                        "high": float(bar["high"]),
+                        "low": float(bar["low"]),
+                        "close": float(bar["close"]),
+                        "volume": float(bar["volume"]),
+                        "fetched_at": now,
+                    }
+                )
+
+            stmt = pg_insert(OHLCVData).values(interval_rows)
+            stmt = stmt.on_conflict_do_update(
+                index_elements=["ticker", "date", "interval"],
+                set_={
+                    "open": stmt.excluded.open,
+                    "high": stmt.excluded.high,
+                    "low": stmt.excluded.low,
+                    "close": stmt.excluded.close,
+                    "volume": stmt.excluded.volume,
+                    "fetched_at": stmt.excluded.fetched_at,
+                },
+            )
+            await session.execute(stmt)
+
+    # Step 5: Compute indicators for 1D only
+    daily_bars = aggregated_by_interval.get("1D", [])
+    if not daily_bars:
+        logger.warning("No 1D aggregated bars for %s, skipping indicators", ticker)
+        # Still update price from raw 1m data
+        latest_close = float(ohlcv_df.iloc[-1]["Close"])
+        await session.execute(
+            update(Index).where(Index.ticker == ticker).values(price=latest_close)
+        )
+        await session.commit()
+        return
+
+    # Build DataFrame for indicator calculation (needs DatetimeIndex)
+    calc_df = pd.DataFrame(daily_bars)
+    calc_df["Date"] = pd.to_datetime(calc_df["time"], unit="s")
+    calc_df = calc_df.rename(
+        columns={"open": "Open", "high": "High", "low": "Low", "close": "Close", "volume": "Volume"}
+    )
     calc_df.set_index("Date", inplace=True)
 
     indicators = calculate_indicators(calc_df)
 
-    # Step 4: Upsert indicator_data rows
+    # Step 5b: Upsert indicator_data rows (1D only)
     indicator_rows = []
     for ind_id, series_dict in indicators.items():
         for series_key, points in series_dict.items():
@@ -203,7 +302,6 @@ async def refresh_index(ticker: str, session: AsyncSession) -> None:
                 )
 
     if indicator_rows:
-        # Batch in chunks to avoid overly large statements
         chunk_size = 1000
         for i in range(0, len(indicator_rows), chunk_size):
             chunk = indicator_rows[i : i + chunk_size]
@@ -217,7 +315,7 @@ async def refresh_index(ticker: str, session: AsyncSession) -> None:
             )
             await session.execute(stmt)
 
-    # Step 5: Generate signals per indicator, aggregate, upsert
+    # Step 6: Generate signals per indicator, aggregate, upsert
     signals: dict[str, str] = {}
     for ind_id, series_data in indicators.items():
         sig = generate_signal(ind_id, series_data, calc_df)
@@ -225,7 +323,6 @@ async def refresh_index(ticker: str, session: AsyncSession) -> None:
 
     aggregate = aggregate_signals(signals)
 
-    # Upsert per-indicator signals
     signal_rows = []
     for ind_id, sig in signals.items():
         signal_rows.append(
@@ -236,7 +333,6 @@ async def refresh_index(ticker: str, session: AsyncSession) -> None:
                 "computed_at": now,
             }
         )
-    # Aggregate signal (sentinel value instead of NULL for upsert compatibility)
     signal_rows.append(
         {
             "ticker": ticker,
@@ -257,11 +353,12 @@ async def refresh_index(ticker: str, session: AsyncSession) -> None:
         )
         await session.execute(stmt)
 
-    # Step 6: Update index row
-    latest_close = float(ohlcv_df.iloc[-1]["Close"])
+    # Step 7: Update index row from latest 1D bar
+    latest_bar = daily_bars[-1]
+    latest_close = float(latest_bar["close"])
     daily_change = None
-    if len(ohlcv_df) >= 2:
-        prev_close = float(ohlcv_df.iloc[-2]["Close"])
+    if len(daily_bars) >= 2:
+        prev_close = float(daily_bars[-2]["close"])
         if prev_close != 0:
             daily_change = round((latest_close / prev_close - 1) * 100, 4)
 
@@ -272,11 +369,47 @@ async def refresh_index(ticker: str, session: AsyncSession) -> None:
     )
 
     await session.commit()
-    logger.info("Index %s refreshed: price=%.2f, signal=%s", ticker, latest_close, aggregate)
+    logger.info("Index %s refreshed (1m→agg): price=%.2f, signal=%s", ticker, latest_close, aggregate)
+
+
+async def refresh_indices_1m(session_factory) -> dict:
+    """Fetch 1m data for all indices (7-day window), aggregate, compute indicators.
+
+    For each index:
+      1. fetch_index_ohlcv(ticker, "7d", "1m")
+      2. Upsert 1m OHLCV rows (datetime in date column, not date())
+      3. Aggregate to STANDARD_INTERVALS using aggregator.aggregate_candles()
+      4. Upsert aggregated OHLCV rows (store with app-convention interval names)
+      5. Compute indicators for 1D interval only, store in indicator_data
+      6. Generate signals per indicator + aggregate for 1D, store in signal_data
+      7. Update Index row (price, daily_change, signal from latest 1D data)
+
+    Returns: {indices_refreshed: int, errors: list[str]}
+    """
+    logger.info("Starting index refresh (1m)")
+    indices_ok = 0
+    errors: list[str] = []
+
+    for idx_data in SEED_INDICES:
+        ticker = idx_data["ticker"]
+        key = f"index:{ticker}"
+        try:
+            async with session_factory() as session:
+                await _refresh_single_index(ticker, session)
+            indices_ok += 1
+            _record_success(key)
+            logger.info("Index %s: OK", ticker)
+        except Exception:
+            logger.exception("Index %s: FAILED", ticker)
+            _record_failure(key)
+            errors.append(key)
+
+    logger.info("Index refresh complete: %d OK, %d errors", indices_ok, len(errors))
+    return {"indices_refreshed": indices_ok, "errors": errors}
 
 
 # ---------------------------------------------------------------------------
-# refresh_fund
+# refresh_fund (single fund — unchanged logic)
 # ---------------------------------------------------------------------------
 
 
@@ -402,57 +535,66 @@ async def refresh_fund(ticker: str, session: AsyncSession) -> None:
 
 
 # ---------------------------------------------------------------------------
-# refresh_all
+# refresh_funds — all funds
 # ---------------------------------------------------------------------------
 
 
-async def refresh_all(session_factory) -> dict:
-    """Main refresh job. Iterates all indices and funds.
+async def refresh_funds(session_factory) -> dict:
+    """Fetch daily NAV for all funds + benchmarks.
 
-    Returns:
-        {"indices_refreshed": int, "funds_refreshed": int, "errors": list[str]}
+    Returns: {funds_refreshed: int, errors: list[str]}
     """
-    logger.info("Starting full refresh")
-    indices_ok = 0
+    logger.info("Starting fund refresh")
     funds_ok = 0
     errors: list[str] = []
 
-    # Refresh indices
-    for idx_data in SEED_INDICES:
-        ticker = idx_data["ticker"]
-        try:
-            async with session_factory() as session:
-                await refresh_index(ticker, session)
-            indices_ok += 1
-            logger.info("Index %s: OK", ticker)
-        except Exception:
-            logger.exception("Index %s: FAILED", ticker)
-            errors.append(f"index:{ticker}")
-
-    # Refresh funds
     for fund_data in SEED_FUNDS:
         ticker = fund_data["ticker"]
+        key = f"fund:{ticker}"
         try:
             async with session_factory() as session:
                 await refresh_fund(ticker, session)
             funds_ok += 1
+            _record_success(key)
             logger.info("Fund %s: OK", ticker)
         except Exception:
             logger.exception("Fund %s: FAILED", ticker)
-            errors.append(f"fund:{ticker}")
+            _record_failure(key)
+            errors.append(key)
 
-    summary = {
-        "indices_refreshed": indices_ok,
-        "funds_refreshed": funds_ok,
-        "errors": errors,
+    logger.info("Fund refresh complete: %d OK, %d errors", funds_ok, len(errors))
+    return {"funds_refreshed": funds_ok, "errors": errors}
+
+
+# ---------------------------------------------------------------------------
+# refresh_all — combined
+# ---------------------------------------------------------------------------
+
+
+async def refresh_all(session_factory) -> dict:
+    """Run both refresh_indices_1m and refresh_funds.
+
+    Returns combined summary:
+        {"indices_refreshed": int, "funds_refreshed": int, "errors": list[str]}
+    """
+    logger.info("Starting full refresh")
+
+    idx_result = await refresh_indices_1m(session_factory)
+    fund_result = await refresh_funds(session_factory)
+
+    combined = {
+        "indices_refreshed": idx_result["indices_refreshed"],
+        "funds_refreshed": fund_result["funds_refreshed"],
+        "errors": idx_result["errors"] + fund_result["errors"],
     }
+
     logger.info(
         "Refresh complete: %d indices, %d funds, %d errors",
-        indices_ok,
-        funds_ok,
-        len(errors),
+        combined["indices_refreshed"],
+        combined["funds_refreshed"],
+        len(combined["errors"]),
     )
-    return summary
+    return combined
 
 
 # ---------------------------------------------------------------------------
@@ -460,18 +602,42 @@ async def refresh_all(session_factory) -> dict:
 # ---------------------------------------------------------------------------
 
 
-def setup_scheduler(session_factory, interval_minutes: int = 60):
-    """Create and configure APScheduler. Returns scheduler (caller starts it)."""
+def setup_scheduler(
+    session_factory,
+    index_interval: int = 15,
+    fund_interval: int = 60,
+) -> AsyncIOScheduler:
+    """Create and configure APScheduler with two jobs.
+
+    Args:
+        session_factory: Async session factory.
+        index_interval: Minutes between index refreshes (1m OHLCV fetch).
+        fund_interval: Minutes between fund refreshes (daily NAV).
+
+    Returns:
+        Configured scheduler (caller starts it).
+    """
     scheduler = AsyncIOScheduler()
 
-    async def _refresh_job():
-        await refresh_all(session_factory)
+    async def _refresh_indices_job():
+        await refresh_indices_1m(session_factory)
+
+    async def _refresh_funds_job():
+        await refresh_funds(session_factory)
 
     scheduler.add_job(
-        _refresh_job,
-        trigger=IntervalTrigger(minutes=interval_minutes),
-        id="refresh_all",
-        name="Refresh all market data",
+        _refresh_indices_job,
+        trigger=IntervalTrigger(minutes=index_interval),
+        id="refresh_indices",
+        name="Refresh index OHLCV (1m)",
+        replace_existing=True,
+    )
+
+    scheduler.add_job(
+        _refresh_funds_job,
+        trigger=IntervalTrigger(minutes=fund_interval),
+        id="refresh_funds",
+        name="Refresh fund NAV data",
         replace_existing=True,
     )
 

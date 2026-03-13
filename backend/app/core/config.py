@@ -11,8 +11,9 @@ class Settings(BaseSettings):
     # CORS
     cors_origins: list[str] = ["http://localhost:5173"]
 
-    # Data refresh interval (minutes)
-    data_refresh_interval: int = 60
+    # Data refresh intervals (minutes)
+    index_refresh_interval: int = 15  # 1m OHLCV fetch for indices
+    data_refresh_interval: int = 60   # Fund NAV refresh
 
     model_config = {"env_file": ".env", "env_prefix": "INVESTIQ_"}
 

@@ -21,10 +21,18 @@ async def lifespan(app: FastAPI):
         await seed_database(session)
     logger.info("Database seeded")
 
-    # Start scheduler
-    scheduler = setup_scheduler(async_session, settings.data_refresh_interval)
+    # Start scheduler — two jobs: indices (fast) and funds (slow)
+    scheduler = setup_scheduler(
+        async_session,
+        index_interval=settings.index_refresh_interval,
+        fund_interval=settings.data_refresh_interval,
+    )
     scheduler.start()
-    logger.info("Scheduler started (interval: %d min)", settings.data_refresh_interval)
+    logger.info(
+        "Scheduler started (indices: %d min, funds: %d min)",
+        settings.index_refresh_interval,
+        settings.data_refresh_interval,
+    )
 
     # Trigger initial refresh as background task
     asyncio.create_task(refresh_all(async_session))

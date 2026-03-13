@@ -2,9 +2,6 @@
 CLAUDE.md
 .claude/
 
-# Concept docs (not part of the app)
-investiq-concept.md
-investiq-datasources.md
 
 # Python
 __pycache__/

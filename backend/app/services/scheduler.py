@@ -151,7 +151,7 @@ async def refresh_index(ticker: str, session: AsyncSession) -> None:
         ohlcv_rows.append(
             {
                 "ticker": ticker,
-                "date": row["Date"].date() if hasattr(row["Date"], "date") else row["Date"],
+                "date": row["Date"].to_pydatetime() if hasattr(row["Date"], "to_pydatetime") else row["Date"],
                 "interval": "1D",
                 "open": float(row["Open"]),
                 "high": float(row["High"]),
@@ -195,7 +195,7 @@ async def refresh_index(ticker: str, session: AsyncSession) -> None:
                         "ticker": ticker,
                         "indicator_id": ind_id,
                         "interval": "1D",
-                        "date": ts.date(),
+                        "date": ts.to_pydatetime(),
                         "series_key": series_key,
                         "value": float(pt["value"]),
                         "fetched_at": now,

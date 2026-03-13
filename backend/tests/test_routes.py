@@ -80,12 +80,19 @@ class MockSession:
                 target_ticker = ticker_match.group(1)
                 rows = [r for r in rows if getattr(r, "ticker", None) == target_ticker]
 
-            # Filter by date if present (>= comparison)
+            # Filter by date if present (>= comparison) — handles both date and datetime strings
             date_match = re.search(r"date\s*>=\s*'([^']+)'", clause_str)
             if date_match:
                 start_str = date_match.group(1)
-                start_date = date.fromisoformat(start_str)
-                rows = [r for r in rows if hasattr(r, "date") and r.date >= start_date]
+                try:
+                    start_dt = datetime.fromisoformat(start_str)
+                except ValueError:
+                    start_dt = datetime.fromisoformat(start_str.split()[0])
+                # Compare as date for FundNAV (still uses Date), datetime for OHLCV/Indicator
+                for_compare = start_dt.date() if start_dt.tzinfo else start_dt.date()
+                rows = [r for r in rows if hasattr(r, "date") and (
+                    r.date.date() if isinstance(r.date, datetime) else r.date
+                ) >= for_compare]
 
             # Filter by interval if present
             interval_match = re.search(r"interval\s*=\s*'([^']+)'", clause_str)
@@ -119,6 +126,7 @@ class FakeObj:
 # ---------------------------------------------------------------------------
 
 TODAY = date(2026, 3, 12)
+TODAY_DT = datetime(2026, 3, 12, tzinfo=UTC)
 
 
 def _make_index(name, ticker, region, price=100.0):
@@ -191,17 +199,17 @@ SEED_INDICES = [
 ]
 
 SEED_OHLCV = [
-    _make_ohlcv("^GSPC", TODAY - timedelta(days=10)),
-    _make_ohlcv("^GSPC", TODAY - timedelta(days=200)),
-    _make_ohlcv("^GSPC", TODAY - timedelta(days=400)),  # outside 1y
+    _make_ohlcv("^GSPC", TODAY_DT - timedelta(days=10)),
+    _make_ohlcv("^GSPC", TODAY_DT - timedelta(days=200)),
+    _make_ohlcv("^GSPC", TODAY_DT - timedelta(days=400)),  # outside 1y
 ]
 
 SEED_INDICATORS = [
-    _make_indicator("^GSPC", "rsi", TODAY - timedelta(days=5), "rsi", 65.0),
-    _make_indicator("^GSPC", "rsi", TODAY - timedelta(days=10), "rsi", 55.0),
-    _make_indicator("^GSPC", "macd", TODAY - timedelta(days=5), "macd", 1.5),
-    _make_indicator("^GSPC", "macd", TODAY - timedelta(days=5), "signal", 1.2),
-    _make_indicator("^GSPC", "macd", TODAY - timedelta(days=5), "histogram", 0.3),
+    _make_indicator("^GSPC", "rsi", TODAY_DT - timedelta(days=5), "rsi", 65.0),
+    _make_indicator("^GSPC", "rsi", TODAY_DT - timedelta(days=10), "rsi", 55.0),
+    _make_indicator("^GSPC", "macd", TODAY_DT - timedelta(days=5), "macd", 1.5),
+    _make_indicator("^GSPC", "macd", TODAY_DT - timedelta(days=5), "signal", 1.2),
+    _make_indicator("^GSPC", "macd", TODAY_DT - timedelta(days=5), "histogram", 0.3),
 ]
 
 SEED_SIGNALS = [

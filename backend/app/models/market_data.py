@@ -13,6 +13,7 @@ class Index(Base):
     name: Mapped[str] = mapped_column(String(100))
     ticker: Mapped[str] = mapped_column(String(20), unique=True)
     region: Mapped[str] = mapped_column(String(20))  # nordic, global
+    currency: Mapped[str | None] = mapped_column(String(3), nullable=True)
     price: Mapped[float | None] = mapped_column(Float, nullable=True)
     daily_change: Mapped[float | None] = mapped_column(Float, nullable=True)
     signal: Mapped[str | None] = mapped_column(String(10), nullable=True)
@@ -24,7 +25,7 @@ class OHLCVData(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     ticker: Mapped[str] = mapped_column(String(20), index=True)
-    date: Mapped[date] = mapped_column(Date, index=True)
+    date: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
     interval: Mapped[str] = mapped_column(String(5), default="1D")
     open: Mapped[float] = mapped_column(Float)
     high: Mapped[float] = mapped_column(Float)
@@ -74,7 +75,7 @@ class IndicatorData(Base):
     ticker: Mapped[str] = mapped_column(String(20), index=True)
     indicator_id: Mapped[str] = mapped_column(String(20))
     interval: Mapped[str] = mapped_column(String(5))
-    date: Mapped[date] = mapped_column(Date, index=True)
+    date: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
     series_key: Mapped[str] = mapped_column(String(20))
     value: Mapped[float] = mapped_column(Float)
     fetched_at: Mapped[datetime] = mapped_column(

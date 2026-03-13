@@ -2,7 +2,7 @@
 
 import calendar
 from collections import defaultdict
-from datetime import date, timedelta
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
@@ -37,14 +37,14 @@ PERIOD_DAYS: dict[str, int] = {
 }
 
 
-def _period_start(period: str) -> date:
-    """Convert a period string to a start date (today minus N days)."""
+def _period_start(period: str) -> datetime:
+    """Convert a period string to a start datetime (now minus N days, UTC)."""
     days = PERIOD_DAYS.get(period, 365)
-    return date.today() - timedelta(days=days)
+    return datetime.now(timezone.utc) - timedelta(days=days)
 
 
-def _date_to_unix(d: date) -> int:
-    """Convert a date to unix timestamp (seconds since epoch, midnight UTC)."""
+def _date_to_unix(d: datetime) -> int:
+    """Convert a datetime to unix timestamp (seconds since epoch)."""
     return int(calendar.timegm(d.timetuple()))
 
 

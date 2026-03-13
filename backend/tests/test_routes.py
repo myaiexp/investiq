@@ -286,16 +286,23 @@ async def test_get_ohlcv_filters_by_period(client):
     resp = await client.get("/api/indices/^GSPC/ohlcv?period=1y&interval=1D")
     assert resp.status_code == 200
     data = resp.json()
-    assert isinstance(data, list)
+    # Response is now OHLCVResponse wrapper with bars array
+    assert isinstance(data, dict)
+    assert "bars" in data
+    bars = data["bars"]
+    assert isinstance(bars, list)
     # 1y = 365 days. We have data at 10d and 200d (within), 400d (outside).
     # The mock filters by ticker, then the route filters by date >= start.
     # But our mock also filters by date, so we should get only the 2 within range.
-    assert len(data) == 2
-    for bar in data:
+    assert len(bars) == 2
+    for bar in bars:
         assert "time" in bar
         assert "open" in bar
         assert "close" in bar
         assert isinstance(bar["time"], int)
+    # Check metadata fields exist
+    assert "lastUpdated" in data
+    assert data["lastUpdated"] is not None
 
 
 @pytest.mark.asyncio

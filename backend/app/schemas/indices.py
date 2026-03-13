@@ -23,6 +23,18 @@ class OHLCVBarResponse(BaseModel):
     volume: float
 
 
+class OHLCVResponse(BaseModel):
+    """Wrapper for OHLCV data with metadata."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    bars: list[OHLCVBarResponse]
+    data_transition_timestamp: int | None = Field(
+        None, serialization_alias="dataTransitionTimestamp"
+    )
+    last_updated: int | None = Field(None, serialization_alias="lastUpdated")
+
+
 class IndicatorDataResponse(BaseModel):
     id: str
     series: dict[str, list[dict[str, float]]]

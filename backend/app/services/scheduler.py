@@ -78,15 +78,24 @@ def _calculate_performance_metrics(nav_df: pd.DataFrame) -> dict:
     if isinstance(close_series, pd.DataFrame):
         close_series = close_series.iloc[:, 0]
     navs = close_series.values.astype(float)
-    n = len(navs)
+
+    # Build a DatetimeIndex from the Date column for calendar-based lookups
+    dates = pd.DatetimeIndex(nav_df["Date"])
+    end_date = dates[-1]
+    end_nav = navs[-1]
 
     # Returns: (nav_end / nav_start - 1) * 100 for 1y/3y/5y windows
-    # ~252 trading days per year
-    windows = {"returns_1y": 252, "returns_3y": 756, "returns_5y": 1260}
-    for key, days in windows.items():
-        if n > days:
-            start_nav = navs[-(days + 1)]
-            end_nav = navs[-1]
+    # Use calendar years (DateOffset) and find the nearest available trading date
+    windows = {"returns_1y": 1, "returns_3y": 3, "returns_5y": 5}
+    for key, years in windows.items():
+        target_date = end_date - pd.DateOffset(years=years)
+        if target_date < dates[0]:
+            # Not enough history for this window
+            continue
+        # Find the index of the date closest to target_date
+        idx = dates.get_indexer([target_date], method="nearest")[0]
+        start_nav = navs[idx]
+        if start_nav > 0:
             result[key] = (end_nav / start_nav - 1) * 100
 
     # Volatility: annualized daily std

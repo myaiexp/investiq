@@ -26,3 +26,8 @@
 .metrics-row__value--negative {
   color: var(--red);
 }
+
+.metrics-row__value--noted {
+  color: var(--text-muted);
+  cursor: help;
+}

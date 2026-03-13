@@ -14,7 +14,12 @@ export default function FundCard({ fund, sparklineData, expanded }: FundCardProp
   return (
     <div className="fund-card">
       <div className="fund-card__top">
-        <span className="fund-card__name">{fund.name}</span>
+        <span className="fund-card__name">
+          {fund.name}
+          {fund.dataNote && (
+            <span className="data-note" title={fund.dataNote}>&#8505;</span>
+          )}
+        </span>
         <TypeBadge fundType={fund.fundType} />
       </div>
       <div className="fund-card__mid">

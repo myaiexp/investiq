@@ -31,3 +31,11 @@
 .index-card__sparkline {
   width: 100%;
 }
+
+.index-card .data-note {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  cursor: help;
+  margin-left: 4px;
+  opacity: 0.7;
+}

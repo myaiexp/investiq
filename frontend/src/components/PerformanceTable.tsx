@@ -5,12 +5,14 @@ interface PerformanceTableProps {
   fundReturns: { "1y": number; "3y": number; "5y": number };
   benchmarkReturns: { "1y": number; "3y": number; "5y": number };
   benchmarkName: string;
+  dataNotes?: Record<string, string> | null;
 }
 
 export default function PerformanceTable({
   fundReturns,
   benchmarkReturns,
   benchmarkName,
+  dataNotes,
 }: PerformanceTableProps) {
   const { t } = useTranslation();
 
@@ -23,6 +25,9 @@ export default function PerformanceTable({
 
   const colorClass = (val: number) =>
     val > 0 ? "perf-table__positive" : val < 0 ? "perf-table__negative" : "";
+
+  const fundNote = (period: string) => dataNotes?.[`return_${period}`];
+  const benchNote = (period: string) => dataNotes?.[`benchmark_${period}`] ?? dataNotes?.benchmark;
 
   return (
     <table className="perf-table">
@@ -39,25 +44,33 @@ export default function PerformanceTable({
       <tbody>
         <tr>
           <td className="perf-table__label">{t("funds.fund")}</td>
-          {periods.map((p) => (
-            <td
-              key={p}
-              className={`perf-table__value number ${colorClass(fundReturns[p])}`}
-            >
-              {formatReturn(fundReturns[p])}
-            </td>
-          ))}
+          {periods.map((p) => {
+            const note = fundNote(p);
+            return (
+              <td
+                key={p}
+                className={`perf-table__value number ${note ? "perf-table__noted" : colorClass(fundReturns[p])}`}
+                title={note}
+              >
+                {note ? "–" : formatReturn(fundReturns[p])}
+              </td>
+            );
+          })}
         </tr>
         <tr>
           <td className="perf-table__label">{benchmarkName}</td>
-          {periods.map((p) => (
-            <td
-              key={p}
-              className={`perf-table__value number ${colorClass(benchmarkReturns[p])}`}
-            >
-              {formatReturn(benchmarkReturns[p])}
-            </td>
-          ))}
+          {periods.map((p) => {
+            const note = benchNote(p);
+            return (
+              <td
+                key={p}
+                className={`perf-table__value number ${note ? "perf-table__noted" : colorClass(benchmarkReturns[p])}`}
+                title={note}
+              >
+                {note ? "–" : formatReturn(benchmarkReturns[p])}
+              </td>
+            );
+          })}
         </tr>
       </tbody>
     </table>

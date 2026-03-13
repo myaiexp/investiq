@@ -20,6 +20,7 @@ export interface IndexMeta {
   price: number;
   dailyChange: number;
   signal: Signal;
+  dataNote?: string | null;
 }
 
 export interface OHLCVBar {

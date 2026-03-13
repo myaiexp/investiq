@@ -251,7 +251,11 @@ def test_sharpe_ratio_calculation():
     daily_std = daily_returns.std()
     annualized_vol = daily_std * np.sqrt(252) * 100
 
-    nav_1y_ago = nav_df.iloc[-253]["Close"] if len(nav_df) >= 253 else nav_df.iloc[0]["Close"]
+    # Calendar-based 1y lookup: find nearest date to exactly 1 year ago
+    date_idx = pd.DatetimeIndex(nav_df["Date"])
+    target_1y = date_idx[-1] - pd.DateOffset(years=1)
+    nearest_idx = date_idx.get_indexer([target_1y], method="nearest")[0]
+    nav_1y_ago = nav_df.iloc[nearest_idx]["Close"]
     return_1y = (nav_df.iloc[-1]["Close"] / nav_1y_ago - 1) * 100
     expected_sharpe = (return_1y - 3.0) / annualized_vol
 
@@ -274,16 +278,16 @@ def test_max_drawdown_calculation():
 
 def test_returns_calculation():
     """Returns computed as (end/start - 1) * 100 for available windows."""
-    # Create exactly 253 trading days (1y + 1 extra for 1-year return)
-    n = 253
-    dates = pd.bdate_range("2024-01-02", periods=n, freq="B")
-    navs = np.linspace(100.0, 120.0, n)  # linear growth from 100 to 120
+    # Slightly more than 1 calendar year of business days so the 1y window fits
+    n = 270
+    dates = pd.bdate_range("2023-12-01", periods=n, freq="B")
+    navs = np.linspace(100.0, 120.0, n)
     nav_df = pd.DataFrame({"Date": dates, "Close": navs})
 
     metrics = _calculate_performance_metrics(nav_df)
 
-    # 1y return: (120 / 100 - 1) * 100 = 20%
-    assert metrics["returns_1y"] == pytest.approx(20.0, rel=0.05)
+    # 1y return: nearest date to 1 calendar year ago → ~19-20%
+    assert metrics["returns_1y"] == pytest.approx(19.4, rel=0.05)
     # 3y and 5y should be None (not enough data)
     assert metrics["returns_3y"] is None
     assert metrics["returns_5y"] is None

@@ -10,6 +10,7 @@ export interface FundMeta {
   nav: number;
   dailyChange: number;
   return1Y: number;
+  dataNote?: string | null;
 }
 
 export interface FundNAVPoint {
@@ -26,4 +27,5 @@ export interface FundPerformance {
   maxDrawdown: number;
   /** Total expense ratio */
   ter: number;
+  dataNotes?: Record<string, string> | null;
 }

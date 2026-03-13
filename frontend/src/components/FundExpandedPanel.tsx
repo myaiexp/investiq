@@ -118,8 +118,9 @@ export default function FundExpandedPanel({ fund }: FundExpandedPanelProps) {
               fundReturns={performance.returns}
               benchmarkReturns={performance.benchmarkReturns}
               benchmarkName={fund.benchmarkName}
+              dataNotes={performance.dataNotes}
             />
-            <MetricsRow metrics={performance} />
+            <MetricsRow metrics={performance} dataNotes={performance.dataNotes} />
           </>
         )}
       </div>

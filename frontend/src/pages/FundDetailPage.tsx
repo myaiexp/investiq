@@ -92,8 +92,9 @@ export default function FundDetailPage() {
             fundReturns={performance.returns}
             benchmarkReturns={performance.benchmarkReturns}
             benchmarkName={fund.benchmarkName}
+            dataNotes={performance.dataNotes}
           />
-          <MetricsRow metrics={performance} />
+          <MetricsRow metrics={performance} dataNotes={performance.dataNotes} />
         </section>
       )}
     </div>

@@ -39,6 +39,11 @@
   color: var(--red);
 }
 
+.perf-table__noted {
+  color: var(--text-muted);
+  cursor: help;
+}
+
 .perf-table tbody tr {
   border-top: 1px solid var(--border);
 }

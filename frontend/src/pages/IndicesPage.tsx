@@ -27,10 +27,10 @@ export default function IndicesPage() {
     for (const index of indices) {
       if (fetchedSparklines.current.has(index.ticker)) continue;
       fetchedSparklines.current.add(index.ticker);
-      api.getOHLCV(index.ticker, "1m", "1D").then((bars) => {
+      api.getOHLCV(index.ticker, "1m", "1D").then((res) => {
         setSparklines((prev) => ({
           ...prev,
-          [index.ticker]: bars.map((b) => ({ time: b.time, value: b.close })),
+          [index.ticker]: res.bars.map((b) => ({ time: b.time, value: b.close })),
         }));
       }).catch(() => {});
       api.getSignal(index.ticker).then((sig) => {
@@ -45,7 +45,7 @@ export default function IndicesPage() {
       setExpandedOHLCV([]);
     } else {
       setExpandedTicker(ticker);
-      api.getOHLCV(ticker, "3m", "1D").then(setExpandedOHLCV);
+      api.getOHLCV(ticker, "3m", "1D").then((res) => setExpandedOHLCV(res.bars));
     }
   };
 

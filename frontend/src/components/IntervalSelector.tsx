@@ -1,26 +1,12 @@
-import type { Period, Interval } from "../types/index.ts";
+import type { Period } from "../types/index.ts";
 import { PERIOD_INTERVAL_MAP } from "../types/index.ts";
 import "./IntervalSelector.css";
 
-/** Display labels for intervals */
-const INTERVAL_LABELS: Record<Interval, string> = {
-  "1m": "1m",
-  "5m": "5m",
-  "15m": "15m",
-  "1H": "1H",
-  "2H": "2H",
-  "4H": "4H",
-  "1D": "1D",
-  "1W": "1W",
-};
-
-/** All intervals in display order */
-const ALL_INTERVALS: Interval[] = [
-  "1m",
+/** Standard preset intervals in display order */
+const PRESET_INTERVALS: string[] = [
   "5m",
   "15m",
   "1H",
-  "2H",
   "4H",
   "1D",
   "1W",
@@ -28,13 +14,13 @@ const ALL_INTERVALS: Interval[] = [
 
 interface IntervalSelectorProps {
   period: Period;
-  value: Interval;
-  onChange: (interval: Interval) => void;
+  value: string;
+  onChange: (interval: string) => void;
 }
 
 /**
- * Interval selector constrained by the active period via PERIOD_INTERVAL_MAP.
- * Unavailable intervals are greyed out and non-interactive.
+ * Interval selector showing standard presets constrained by PERIOD_INTERVAL_MAP.
+ * Task 8 will add dropdown extras and free-form custom input.
  */
 export default function IntervalSelector({
   period,
@@ -46,7 +32,7 @@ export default function IntervalSelector({
 
   return (
     <div className="interval-selector" role="radiogroup">
-      {ALL_INTERVALS.map((interval) => {
+      {PRESET_INTERVALS.map((interval) => {
         const isAvailable = available.has(interval);
         const isActive = interval === value;
 
@@ -60,7 +46,7 @@ export default function IntervalSelector({
             aria-checked={isActive}
             aria-disabled={!isAvailable}
           >
-            {INTERVAL_LABELS[interval]}
+            {interval}
           </button>
         );
       })}

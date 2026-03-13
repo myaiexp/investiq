@@ -27,7 +27,10 @@
     "2H": "2H",
     "4H": "4H",
     "1D": "1D",
-    "1W": "1W"
+    "3D": "3D",
+    "1W": "1W",
+    "2W": "2W",
+    "8H": "8H"
   },
   "indicators": {
     "rsi": "RSI",
@@ -45,7 +48,8 @@
     "nordic": "Nordic",
     "global": "Global",
     "equity": "Equity",
-    "bond": "Bond"
+    "bond": "Bond",
+    "balanced": "Balanced"
   },
   "detail": {
     "fullAnalysis": "Full analysis",

@@ -20,6 +20,7 @@ export interface IndexMeta {
   price: number;
   dailyChange: number;
   signal: Signal;
+  currency?: string | null;
   dataNote?: string | null;
 }
 
@@ -31,6 +32,12 @@ export interface OHLCVBar {
   low: number;
   close: number;
   volume: number;
+}
+
+export interface OHLCVResponse {
+  bars: OHLCVBar[];
+  dataTransitionTimestamp?: number | null;
+  lastUpdated?: number | null;
 }
 
 export interface IndicatorMeta {

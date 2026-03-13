@@ -8,7 +8,7 @@ import type {
   IndicatorId,
   SignalSummary,
 } from "../types/index.ts";
-import type { Period, Interval } from "../types/index.ts";
+import type { Period } from "../types/index.ts";
 import { PERIOD_INTERVAL_MAP } from "../types/index.ts";
 import { api } from "../api/client.ts";
 import BackButton from "../components/BackButton.tsx";
@@ -28,7 +28,7 @@ export default function IndexDetailPage() {
   const [indicators, setIndicators] = useState<IndicatorData[]>([]);
   const [signal, setSignal] = useState<SignalSummary | null>(null);
   const [period, setPeriod] = useState<Period>("1y");
-  const [interval, setInterval] = useState<Interval>("1D");
+  const [interval, setInterval] = useState<string>("1D");
   const [enabledIndicators, setEnabledIndicators] = useState<Set<IndicatorId>>(
     new Set(),
   );
@@ -47,16 +47,21 @@ export default function IndexDetailPage() {
   // Load OHLCV + indicators when period/interval changes
   useEffect(() => {
     if (!ticker) return;
-    api.getOHLCV(ticker, period, interval).then(setOhlcv);
+    api.getOHLCV(ticker, period, interval).then((res) => setOhlcv(res.bars));
     api.getIndicators(ticker, period, interval).then(setIndicators);
   }, [ticker, period, interval]);
 
-  // When period changes, reset interval to default for that period
+  // When period changes, reset interval to default if current preset isn't available.
+  // Custom intervals (not in any period's preset list) are kept as-is.
   const handlePeriodChange = useCallback(
     (newPeriod: Period) => {
       setPeriod(newPeriod);
       const config = PERIOD_INTERVAL_MAP[newPeriod];
-      if (!config.intervals.includes(interval)) {
+      // Check if current interval is a standard preset in some period
+      const isStandardPreset = Object.values(PERIOD_INTERVAL_MAP).some(
+        (c) => c.intervals.includes(interval),
+      );
+      if (isStandardPreset && !config.intervals.includes(interval)) {
         setInterval(config.defaultInterval);
       }
     },

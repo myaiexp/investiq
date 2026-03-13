@@ -27,7 +27,10 @@
     "2H": "2t",
     "4H": "4t",
     "1D": "1pv",
-    "1W": "1vk"
+    "3D": "3pv",
+    "1W": "1vk",
+    "2W": "2vk",
+    "8H": "8t"
   },
   "indicators": {
     "rsi": "RSI",
@@ -45,7 +48,8 @@
     "nordic": "Pohjoismaat",
     "global": "Maailma",
     "equity": "Osake",
-    "bond": "Korko"
+    "bond": "Korko",
+    "balanced": "Yhdistelmä"
   },
   "detail": {
     "fullAnalysis": "Täysi analyysi",

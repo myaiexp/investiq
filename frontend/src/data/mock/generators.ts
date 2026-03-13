@@ -34,7 +34,7 @@ function createRng(seed: number): () => number {
 // Interval → seconds mapping
 // ---------------------------------------------------------------------------
 
-const INTERVAL_SECONDS: Record<Interval, number> = {
+const INTERVAL_SECONDS: Record<string, number> = {
   "1m": 60,
   "5m": 300,
   "15m": 900,

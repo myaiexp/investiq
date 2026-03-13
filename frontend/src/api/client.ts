@@ -1,11 +1,11 @@
 import type {
   IndexMeta,
-  OHLCVBar,
+  OHLCVResponse,
   IndicatorData,
   SignalSummary,
 } from "../types/index.ts";
 import type { FundMeta, FundNAVPoint, FundPerformance } from "../types/funds.ts";
-import type { Period, Interval } from "../types/charts.ts";
+import type { Period } from "../types/charts.ts";
 
 const BASE = import.meta.env.DEV ? "/api" : "/investiq/api";
 
@@ -20,12 +20,12 @@ export interface Api {
   getOHLCV: (
     ticker: string,
     period?: Period,
-    interval?: Interval,
-  ) => Promise<OHLCVBar[]>;
+    interval?: string,
+  ) => Promise<OHLCVResponse>;
   getIndicators: (
     ticker: string,
     period?: Period,
-    interval?: Interval,
+    interval?: string,
   ) => Promise<IndicatorData[]>;
   getSignal: (ticker: string) => Promise<SignalSummary>;
   getFunds: () => Promise<FundMeta[]>;
@@ -36,12 +36,12 @@ export interface Api {
 export const api: Api = {
   getIndices: () => get<IndexMeta[]>("/indices/"),
 
-  getOHLCV: (ticker: string, period: Period = "1y", interval: Interval = "1D") =>
-    get<OHLCVBar[]>(
+  getOHLCV: (ticker: string, period: Period = "1y", interval: string = "1D") =>
+    get<OHLCVResponse>(
       `/indices/${encodeURIComponent(ticker)}/ohlcv?period=${period}&interval=${interval}`,
     ),
 
-  getIndicators: (ticker: string, period: Period = "1y", interval: Interval = "1D") =>
+  getIndicators: (ticker: string, period: Period = "1y", interval: string = "1D") =>
     get<IndicatorData[]>(
       `/indices/${encodeURIComponent(ticker)}/indicators?period=${period}&interval=${interval}`,
     ),

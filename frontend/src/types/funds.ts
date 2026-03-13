@@ -1,4 +1,4 @@
-export type FundType = "equity" | "bond";
+export type FundType = "equity" | "bond" | "balanced";
 
 export interface FundMeta {
   name: string;

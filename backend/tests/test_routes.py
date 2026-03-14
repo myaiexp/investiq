@@ -104,7 +104,10 @@ class MockSession:
             if "_aggregate" in clause_str and "indicator_id" in clause_str:
                 rows = [r for r in rows if getattr(r, "indicator_id", None) != "_aggregate"]
 
-            return rows
+        # Sort by date if rows have date attribute (handles ORDER BY date)
+        if rows and hasattr(rows[0], "date"):
+            rows = sorted(rows, key=lambda r: r.date)
+
         return rows
 
 
@@ -254,6 +257,10 @@ async def client():
 
     async def mock_get_db():
         yield MockSession(_build_session_data())
+
+    # Clear cached earliest data between tests
+    from app.api.routes.indices import _earliest_cache
+    _earliest_cache.clear()
 
     app.dependency_overrides[get_db] = mock_get_db
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test", follow_redirects=True) as ac:

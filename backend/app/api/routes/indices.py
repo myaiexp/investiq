@@ -40,15 +40,11 @@ PERIOD_DAYS: dict[str, int] = {
     "5y": 1825,
 }
 
-# Pre-aggregated intervals stored in ohlcv_data (from backfill + scheduler)
-# 1m excluded: only ~7 days retention, needs hybrid stitching for longer periods
-STANDARD_INTERVALS = {"5m", "15m", "1H", "4H", "1D", "1W"}
-
 # Nearest standard interval for backfill stitching (smallest to largest)
 _BACKFILL_PREFERENCE = ["5m", "15m", "1H", "4H", "1D", "1W"]
 
-# Module-level cache: {ticker: earliest_1m_unix_timestamp}
-_earliest_1m_cache: dict[str, int | None] = {}
+# Module-level cache: {(ticker, interval): earliest_datetime_or_None}
+_earliest_cache: dict[tuple[str, str], datetime | None] = {}
 
 
 def _period_start(period: str) -> datetime:
@@ -69,24 +65,24 @@ async def _verify_index_exists(ticker: str, db: AsyncSession) -> None:
         raise HTTPException(status_code=404, detail=f"Index '{ticker}' not found")
 
 
-async def get_earliest_1m(ticker: str, db: AsyncSession) -> int | None:
-    """Query earliest 1m row for ticker. Cache result. Return unix timestamp or None."""
-    if ticker in _earliest_1m_cache:
-        return _earliest_1m_cache[ticker]
+async def _get_earliest_stored(
+    ticker: str, interval: str, db: AsyncSession,
+) -> datetime | None:
+    """Return the earliest stored datetime for (ticker, interval), or None. Cached."""
+    key = (ticker, interval)
+    if key in _earliest_cache:
+        return _earliest_cache[key]
 
     result = await db.execute(
         select(OHLCVData)
-        .where(OHLCVData.ticker == ticker, OHLCVData.interval == "1m")
+        .where(OHLCVData.ticker == ticker, OHLCVData.interval == interval)
         .order_by(OHLCVData.date)
+        .limit(1)
     )
     row = result.scalars().first()
-    if row is None:
-        _earliest_1m_cache[ticker] = None
-        return None
-
-    ts = _date_to_unix(row.date)
-    _earliest_1m_cache[ticker] = ts
-    return ts
+    earliest = row.date if row else None
+    _earliest_cache[key] = earliest
+    return earliest
 
 
 def _rows_to_bar_dicts(rows: list) -> list[dict]:
@@ -190,8 +186,12 @@ async def get_ohlcv(
     start = _period_start(period)
     now_unix = _date_to_unix(datetime.now(timezone.utc))
 
-    if interval in STANDARD_INTERVALS:
-        # Standard path: query pre-aggregated data directly
+    # Check if stored data for this interval fully covers the period.
+    # If yes, serve directly. If not (or no stored data), use hybrid stitching.
+    earliest_stored = await _get_earliest_stored(ticker, interval, db)
+
+    if earliest_stored is not None and earliest_stored <= start:
+        # Full coverage — serve stored data directly
         result = await db.execute(
             select(OHLCVData)
             .where(
@@ -219,42 +219,35 @@ async def get_ohlcv(
             last_updated=now_unix,
         )
 
-    # Custom interval path: aggregate from 1m data
-    earliest_1m = await get_earliest_1m(ticker, db)
-    transition_ts: int | None = earliest_1m
+    # Hybrid path: aggregate from 1m data, stitch with backfill for older dates
+    earliest_1m = await _get_earliest_stored(ticker, "1m", db)
+    transition_ts: int | None = _date_to_unix(earliest_1m) if earliest_1m else None
     backfill_ivl: str | None = None
 
     all_bars: list[dict] = []
 
     # Part A: Backfill data for dates before 1m coverage
-    if earliest_1m is not None:
-        earliest_1m_dt = datetime.fromtimestamp(earliest_1m, tz=timezone.utc)
-        if start < earliest_1m_dt:
-            # Find nearest standard interval for backfill
-            for std_interval in _BACKFILL_PREFERENCE:
-                result = await db.execute(
-                    select(OHLCVData)
-                    .where(
-                        OHLCVData.ticker == ticker,
-                        OHLCVData.interval == std_interval,
-                        OHLCVData.date >= start,
-                        OHLCVData.date < earliest_1m_dt,
-                    )
-                    .order_by(OHLCVData.date)
+    if earliest_1m is not None and start < earliest_1m:
+        for std_interval in _BACKFILL_PREFERENCE:
+            result = await db.execute(
+                select(OHLCVData)
+                .where(
+                    OHLCVData.ticker == ticker,
+                    OHLCVData.interval == std_interval,
+                    OHLCVData.date >= start,
+                    OHLCVData.date < earliest_1m,
                 )
-                backfill_rows = result.scalars().all()
-                if backfill_rows:
-                    raw = _rows_to_bar_dicts(backfill_rows)
-                    all_bars.extend(aggregate_candles(raw, interval))
-                    backfill_ivl = std_interval
-                    break
+                .order_by(OHLCVData.date)
+            )
+            backfill_rows = result.scalars().all()
+            if backfill_rows:
+                raw = _rows_to_bar_dicts(backfill_rows)
+                all_bars.extend(aggregate_candles(raw, interval))
+                backfill_ivl = std_interval
+                break
 
     # Part B: Aggregate 1m data within the date range
-    query_start = start
-    if earliest_1m is not None:
-        earliest_1m_dt = datetime.fromtimestamp(earliest_1m, tz=timezone.utc)
-        if earliest_1m_dt > start:
-            query_start = earliest_1m_dt
+    query_start = max(start, earliest_1m) if earliest_1m else start
 
     result = await db.execute(
         select(OHLCVData)
@@ -317,8 +310,17 @@ async def get_indicators(
 
     start = _period_start(period)
 
-    if interval in STANDARD_INTERVALS:
-        # Standard path: serve pre-computed indicator data
+    # Check if pre-computed indicator data exists for this interval
+    indicator_check = await db.execute(
+        select(IndicatorData)
+        .where(
+            IndicatorData.ticker == ticker,
+            IndicatorData.interval == interval,
+        )
+        .limit(1)
+    )
+    if indicator_check.scalars().first() is not None:
+        # Serve pre-computed indicator data
         result = await db.execute(
             select(IndicatorData)
             .where(

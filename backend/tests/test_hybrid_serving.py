@@ -127,8 +127,10 @@ class MockSession:
                     if getattr(r, "indicator_id", None) != "_aggregate"
                 ]
 
-            # Filter for func.min (earliest 1m query) — return all, let caller handle
-            return rows
+        # Sort by date if rows have date attribute (handles ORDER BY date)
+        if rows and hasattr(rows[0], "date"):
+            rows = sorted(rows, key=lambda r: r.date)
+
         return rows
 
 
@@ -201,9 +203,9 @@ def _make_signal(ticker, indicator_id, signal):
 # Test index
 SEED_INDEX = _make_index("S&P 500", "^GSPC", "global", 5200.0, currency="USD")
 
-# Standard 1D OHLCV data — 20 bars within 1y
+# Standard 1D OHLCV data — 20 bars spanning >1y (every ~20 days)
 SEED_OHLCV_1D = [
-    _make_ohlcv("^GSPC", NOW_DT - timedelta(days=i), "1D", o=100 + i, h=106 + i, lo=98 + i, c=104 + i)
+    _make_ohlcv("^GSPC", NOW_DT - timedelta(days=i * 20), "1D", o=100 + i, h=106 + i, lo=98 + i, c=104 + i)
     for i in range(20)
 ]
 
@@ -276,10 +278,10 @@ async def client():
     async def mock_get_db():
         yield MockSession(_build_data())
 
-    # Clear any cached earliest-1m data between tests
-    from app.api.routes.indices import _earliest_1m_cache
+    # Clear any cached earliest data between tests
+    from app.api.routes.indices import _earliest_cache
 
-    _earliest_1m_cache.clear()
+    _earliest_cache.clear()
 
     app.dependency_overrides[get_db] = mock_get_db
     async with AsyncClient(
@@ -303,9 +305,9 @@ async def client_no_1m():
     async def mock_get_db():
         yield MockSession(data)
 
-    from app.api.routes.indices import _earliest_1m_cache
+    from app.api.routes.indices import _earliest_cache
 
-    _earliest_1m_cache.clear()
+    _earliest_cache.clear()
 
     app.dependency_overrides[get_db] = mock_get_db
     async with AsyncClient(

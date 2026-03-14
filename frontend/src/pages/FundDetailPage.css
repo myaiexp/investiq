@@ -1,5 +1,5 @@
 .fund-detail {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
 }
 
@@ -30,10 +30,56 @@
   margin-bottom: var(--gap-lg);
 }
 
+/* Sidebar layout — wraps NAVChart + indicators */
+.fund-detail__layout {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: var(--gap-xl);
+  margin-bottom: var(--gap-xl);
+}
+
+.fund-detail__chart-area {
+  min-width: 0;
+}
+
 .fund-detail__chart-section {
   margin-bottom: var(--gap-xl);
 }
 
+.fund-detail__signal-mobile {
+  display: none;
+  margin-top: var(--gap-lg);
+}
+
+.fund-detail__sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-lg);
+}
+
+/* Mobile floating button */
+.fund-detail__drawer-btn {
+  display: none;
+  position: fixed;
+  bottom: var(--gap-xl);
+  right: var(--gap-xl);
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: white;
+  border: none;
+  font-size: 1.25rem;
+  cursor: pointer;
+  z-index: 100;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.fund-detail__drawer-btn:hover {
+  background: var(--accent-hover);
+}
+
+/* Sections below the layout grid */
 .fund-detail__relative {
   margin-bottom: var(--gap-xl);
 }
@@ -51,4 +97,24 @@
   display: flex;
   flex-direction: column;
   gap: var(--gap-xl);
+}
+
+@media (max-width: 1024px) {
+  .fund-detail__layout {
+    grid-template-columns: 1fr;
+  }
+
+  .fund-detail__sidebar {
+    display: none;
+  }
+
+  .fund-detail__signal-mobile {
+    display: block;
+  }
+
+  .fund-detail__drawer-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 }

@@ -9,6 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.constants import PERIOD_DAYS
 from app.core.database import get_db
 from app.data.seed import INDICATOR_CATEGORIES
 from app.models.market_data import Index, IndicatorData, OHLCVData, SignalData
@@ -31,14 +32,6 @@ INDEX_DATA_NOTES: dict[str, str] = {
     "OBX.OL": "Total return index (includes dividends), not the price-only OBX",
 }
 
-# Period string → number of days
-PERIOD_DAYS: dict[str, int] = {
-    "1m": 30,
-    "3m": 90,
-    "6m": 180,
-    "1y": 365,
-    "5y": 1825,
-}
 
 # Nearest standard interval for backfill stitching (smallest to largest)
 _BACKFILL_PREFERENCE = ["5m", "15m", "1H", "4H", "1D", "1W"]

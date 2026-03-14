@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.constants import PERIOD_DAYS
 from app.core.database import get_db
 from app.models.market_data import Fund, FundNAV, FundPerformance
 from app.schemas.funds import (
@@ -32,14 +33,6 @@ FUND_PERF_NOTES: dict[str, dict[str, str]] = {
 # Funds with broken benchmark data
 FUND_BENCHMARK_NOTES: dict[str, str] = {}
 
-# Period string → number of days
-PERIOD_DAYS: dict[str, int] = {
-    "1m": 30,
-    "3m": 90,
-    "6m": 180,
-    "1y": 365,
-    "5y": 1825,
-}
 
 
 def _period_start(period: str) -> date:

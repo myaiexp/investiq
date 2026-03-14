@@ -1,11 +1,9 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import {
-  createChart,
-  LineSeries,
-  ColorType,
-} from "lightweight-charts";
-import type { IChartApi, ISeriesApi, SeriesType, UTCTimestamp } from "lightweight-charts";
-import type { FundNAVPoint } from "../../types/index.ts";
+import { LineSeries } from "lightweight-charts";
+import type { ISeriesApi, SeriesType, UTCTimestamp } from "lightweight-charts";
+import type { FundNAVPoint, IndicatorData, IndicatorId } from "../../types/index.ts";
+import { useChart } from "./useChart.ts";
+import { useIndicatorSeries } from "./useIndicatorSeries.ts";
 import "./NAVChart.css";
 
 interface NAVChartProps {
@@ -13,6 +11,8 @@ interface NAVChartProps {
   benchmarkData?: FundNAVPoint[];
   fundName: string;
   benchmarkName?: string;
+  indicators?: IndicatorData[];
+  enabledIndicators?: Set<IndicatorId>;
 }
 
 interface TooltipData {
@@ -30,9 +30,10 @@ export default function NAVChart({
   benchmarkData,
   fundName,
   benchmarkName,
+  indicators = [],
+  enabledIndicators = new Set(),
 }: NAVChartProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const chartRef = useRef<IChartApi | null>(null);
+  const { chartRef, containerRef } = useChart();
   const tooltipRef = useRef<HTMLDivElement>(null);
   const [tooltip, setTooltip] = useState<TooltipData>({ visible: false, x: 0, y: 0 });
 
@@ -45,37 +46,18 @@ export default function NAVChart({
     [],
   );
 
+  // Data effect — creates/removes fund + benchmark series on each data change.
+  // Cleanup removes series only (NOT the chart).
   useEffect(() => {
-    if (!containerRef.current || fundData.length === 0) return;
-
-    const chart = createChart(containerRef.current, {
-      autoSize: true,
-      layout: {
-        background: { type: ColorType.Solid, color: "transparent" },
-        textColor: "#94a3b8",
-        fontFamily: '"Inter", system-ui, -apple-system, sans-serif',
-        fontSize: 11,
-      },
-      grid: {
-        vertLines: { color: "rgba(30, 41, 59, 0.5)" },
-        horzLines: { color: "rgba(30, 41, 59, 0.5)" },
-      },
-      crosshair: {
-        vertLine: { color: "rgba(59, 130, 246, 0.3)" },
-        horzLine: { color: "rgba(59, 130, 246, 0.3)" },
-      },
-      timeScale: { borderColor: "#1e293b" },
-      rightPriceScale: { borderColor: "#1e293b" },
-    });
-
-    chartRef.current = chart;
+    const chart = chartRef.current;
+    if (!chart || fundData.length === 0) return;
 
     const hasBenchmark = benchmarkData && benchmarkData.length > 0;
     const normalize = hasBenchmark && fundData.length > 0;
     const fundBase = fundData[0]?.value ?? 1;
     const benchBase = benchmarkData?.[0]?.value ?? 1;
 
-    // Build lookup maps for absolute prices
+    // Build lookup maps for absolute prices (used in tooltip)
     const fundAbsolute = new Map<number, number>();
     for (const p of fundData) fundAbsolute.set(p.time, p.value);
     const benchAbsolute = new Map<number, number>();
@@ -120,9 +102,10 @@ export default function NAVChart({
       );
     }
 
-    // Tooltip with absolute prices on hover
+    // Tooltip with absolute prices on hover (only in normalized/benchmark mode)
+    let unsubscribe: (() => void) | null = null;
     if (normalize) {
-      chart.subscribeCrosshairMove((param) => {
+      const handler = (param: Parameters<Parameters<typeof chart.subscribeCrosshairMove>[0]>[0]) => {
         if (!param.point || !param.time || param.point.x < 0 || param.point.y < 0) {
           setTooltip((prev) => (prev.visible ? { ...prev, visible: false } : prev));
           return;
@@ -155,16 +138,27 @@ export default function NAVChart({
         }
 
         setTooltip(next);
-      });
+      };
+
+      chart.subscribeCrosshairMove(handler);
+      unsubscribe = () => chart.unsubscribeCrosshairMove(handler);
     }
 
     chart.timeScale().fitContent();
 
     return () => {
-      chart.remove();
-      chartRef.current = null;
+      unsubscribe?.();
+      // Hide tooltip on cleanup to avoid stale display
+      setTooltip({ visible: false, x: 0, y: 0 });
+      // Remove series only — chart lifecycle is managed by useChart()
+      chart.removeSeries(fundSeries);
+      if (benchSeries) chart.removeSeries(benchSeries);
     };
-  }, [fundData, benchmarkData, fundName, benchmarkName, fmtPrice, fmtPct]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chartRef.current, fundData, benchmarkData, fmtPrice, fmtPct]);
+
+  // Delegate indicator overlays/oscillators to the shared hook
+  useIndicatorSeries(chartRef.current, indicators, enabledIndicators);
 
   // Position tooltip within chart bounds
   const tooltipStyle: React.CSSProperties = { display: "none" };

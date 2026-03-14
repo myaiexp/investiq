@@ -37,6 +37,7 @@ export interface OHLCVBar {
 export interface OHLCVResponse {
   bars: OHLCVBar[];
   dataTransitionTimestamp?: number | null;
+  backfillInterval?: string | null;
   lastUpdated?: number | null;
 }
 

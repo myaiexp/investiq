@@ -28,6 +28,9 @@ export default function IndexDetailPage() {
   const [dataTransitionTimestamp, setDataTransitionTimestamp] = useState<
     number | null
   >(null);
+  const [backfillInterval, setBackfillInterval] = useState<string | null>(
+    null,
+  );
   const [indicators, setIndicators] = useState<IndicatorData[]>([]);
   const [signal, setSignal] = useState<SignalSummary | null>(null);
   const [period, setPeriod] = useState<Period>("1y");
@@ -55,10 +58,12 @@ export default function IndexDetailPage() {
       .then((res) => {
         setOhlcv(res.bars);
         setDataTransitionTimestamp(res.dataTransitionTimestamp ?? null);
+        setBackfillInterval(res.backfillInterval ?? null);
       })
       .catch(() => {
         setOhlcv([]);
         setDataTransitionTimestamp(null);
+        setBackfillInterval(null);
       });
     api.getIndicators(ticker, period, interval).then(setIndicators).catch(() => setIndicators([]));
   }, [ticker, period, interval]);
@@ -153,6 +158,8 @@ export default function IndexDetailPage() {
             indicators={indicators}
             enabledIndicators={enabledIndicators}
             dataTransitionTimestamp={dataTransitionTimestamp ?? undefined}
+            backfillInterval={backfillInterval ?? undefined}
+            interval={interval}
           />
           {filteredSignal && (
             <div className="index-detail__signal-mobile">

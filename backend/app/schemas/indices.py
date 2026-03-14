@@ -32,6 +32,9 @@ class OHLCVResponse(BaseModel):
     data_transition_timestamp: int | None = Field(
         None, serialization_alias="dataTransitionTimestamp"
     )
+    backfill_interval: str | None = Field(
+        None, serialization_alias="backfillInterval"
+    )
     last_updated: int | None = Field(None, serialization_alias="lastUpdated")
 
 

@@ -222,6 +222,7 @@ async def get_ohlcv(
     # Custom interval path: aggregate from 1m data
     earliest_1m = await get_earliest_1m(ticker, db)
     transition_ts: int | None = earliest_1m
+    backfill_ivl: str | None = None
 
     all_bars: list[dict] = []
 
@@ -245,6 +246,7 @@ async def get_ohlcv(
                 if backfill_rows:
                     raw = _rows_to_bar_dicts(backfill_rows)
                     all_bars.extend(aggregate_candles(raw, interval))
+                    backfill_ivl = std_interval
                     break
 
     # Part B: Aggregate 1m data within the date range
@@ -289,6 +291,7 @@ async def get_ohlcv(
     return OHLCVResponse(
         bars=_bar_dicts_to_response(unique_bars),
         data_transition_timestamp=transition_ts,
+        backfill_interval=backfill_ivl,
         last_updated=now_unix,
     )
 

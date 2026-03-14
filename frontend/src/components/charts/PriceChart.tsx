@@ -1,14 +1,11 @@
 import { useEffect } from "react";
-import {
-  CandlestickSeries,
-  HistogramSeries,
-  createSeriesMarkers,
-} from "lightweight-charts";
+import { CandlestickSeries, HistogramSeries } from "lightweight-charts";
 import type { UTCTimestamp } from "lightweight-charts";
 import type { OHLCVBar, IndicatorData, IndicatorId } from "../../types/index.ts";
 import { useChart } from "./useChart.ts";
 import { useIndicatorSeries } from "./useIndicatorSeries.ts";
 import { candlestickOptions, volumeOptions } from "./chartTheme.ts";
+import { TransitionLinePrimitive } from "./TransitionLine.ts";
 import "./PriceChart.css";
 
 interface PriceChartProps {
@@ -16,6 +13,8 @@ interface PriceChartProps {
   indicators: IndicatorData[];
   enabledIndicators: Set<IndicatorId>;
   dataTransitionTimestamp?: number;
+  backfillInterval?: string;
+  interval: string;
 }
 
 /**
@@ -30,6 +29,8 @@ export default function PriceChart({
   indicators,
   enabledIndicators,
   dataTransitionTimestamp,
+  backfillInterval,
+  interval,
 }: PriceChartProps) {
   const { chartRef, containerRef } = useChart();
 
@@ -75,23 +76,19 @@ export default function PriceChart({
     candleSeries.setData(candleData);
     volSeries.setData(volData);
 
-    // Data transition marker: shows where backfilled data ends and live 1m-aggregated begins
-    let transitionMarkers: { setMarkers: (m: never[]) => void } | null = null;
-    if (dataTransitionTimestamp) {
-      // Find the nearest bar at or after the transition timestamp
+    // Data transition line: vertical dashed line with resolution labels
+    let transitionPrimitive: TransitionLinePrimitive | null = null;
+    if (dataTransitionTimestamp && backfillInterval) {
       const nearestBar = candleData.find(
         (b) => (b.time as number) >= dataTransitionTimestamp,
       );
       if (nearestBar) {
-        transitionMarkers = createSeriesMarkers(candleSeries, [
-          {
-            time: nearestBar.time,
-            position: "aboveBar",
-            shape: "arrowDown",
-            color: "rgba(148, 163, 184, 0.6)",
-            text: "▸ live",
-          },
-        ]);
+        transitionPrimitive = new TransitionLinePrimitive({
+          time: nearestBar.time,
+          leftLabel: backfillInterval,
+          rightLabel: interval,
+        });
+        candleSeries.attachPrimitive(transitionPrimitive);
       }
     }
 
@@ -99,14 +96,14 @@ export default function PriceChart({
 
     return () => {
       try {
-        if (transitionMarkers) transitionMarkers.setMarkers([]);
+        if (transitionPrimitive) candleSeries.detachPrimitive(transitionPrimitive);
         chart.removeSeries(candleSeries);
         chart.removeSeries(volSeries);
       } catch {
         // Chart may already be destroyed
       }
     };
-  }, [chartRef, data, dataTransitionTimestamp]);
+  }, [chartRef, data, dataTransitionTimestamp, backfillInterval, interval]);
 
   // Delegate indicator series management
   useIndicatorSeries(chartRef.current, indicators, enabledIndicators);

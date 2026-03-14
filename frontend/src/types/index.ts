@@ -13,6 +13,7 @@ export type {
 
 export type {
   FundType,
+  FundIndicatorId,
   FundMeta,
   FundNAVPoint,
   FundPerformance,

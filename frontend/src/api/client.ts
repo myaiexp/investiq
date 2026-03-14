@@ -31,6 +31,8 @@ export interface Api {
   getFunds: () => Promise<FundMeta[]>;
   getFundPerformance: (ticker: string) => Promise<FundPerformance>;
   getFundNAV: (ticker: string, period?: Period) => Promise<FundNAVPoint[]>;
+  getFundIndicators: (ticker: string, period?: Period) => Promise<IndicatorData[]>;
+  getFundSignal: (ticker: string) => Promise<SignalSummary>;
 }
 
 export const api: Api = {
@@ -58,4 +60,12 @@ export const api: Api = {
     get<FundNAVPoint[]>(
       `/funds/${encodeURIComponent(ticker)}/nav?period=${period}`,
     ),
+
+  getFundIndicators: (ticker: string, period: Period = "1y") =>
+    get<IndicatorData[]>(
+      `/funds/${encodeURIComponent(ticker)}/indicators?period=${period}`,
+    ),
+
+  getFundSignal: (ticker: string) =>
+    get<SignalSummary>(`/funds/${encodeURIComponent(ticker)}/signal`),
 };

@@ -1,5 +1,7 @@
 export type FundType = "equity" | "bond" | "balanced";
 
+export type FundIndicatorId = "rsi" | "macd" | "ma" | "cci" | "bollinger";
+
 export interface FundMeta {
   name: string;
   ticker: string;

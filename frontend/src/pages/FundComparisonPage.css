@@ -29,6 +29,10 @@
   margin-bottom: var(--gap-xl);
 }
 
+.fund-comparison__indicator-panel {
+  margin-top: var(--gap-md);
+}
+
 .fund-comparison__table-section {
   margin-bottom: var(--gap-xl);
 }

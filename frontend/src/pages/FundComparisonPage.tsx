@@ -1,14 +1,31 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import type { FundMeta, FundNAVPoint, FundPerformance, Period } from "../types/index.ts";
+import type {
+  FundMeta,
+  FundNAVPoint,
+  FundPerformance,
+  IndicatorData,
+  IndicatorId,
+  IndicatorMeta,
+  Period,
+} from "../types/index.ts";
 import { api } from "../api/client.ts";
 import BackButton from "../components/BackButton.tsx";
 import PeriodSelector from "../components/PeriodSelector.tsx";
 import FundSelector from "../components/FundSelector.tsx";
-import ComparisonChart from "../components/charts/ComparisonChart.tsx";
+import ComparisonChart, { FUND_COLORS } from "../components/charts/ComparisonChart.tsx";
 import ComparisonTable from "../components/ComparisonTable.tsx";
+import IndicatorPanel from "../components/IndicatorPanel.tsx";
+import { COMPARISON_OSCILLATORS } from "../components/charts/useComparisonIndicators.ts";
 import "./FundComparisonPage.css";
+
+/** Static metadata for the 3 comparison oscillators — no signal dots (don't aggregate across funds) */
+const comparisonMetas: IndicatorMeta[] = COMPARISON_OSCILLATORS.map((id) => ({
+  id,
+  category: "oscillator" as const,
+  signal: "hold" as const,
+}));
 
 export default function FundComparisonPage() {
   const { t } = useTranslation();
@@ -22,6 +39,8 @@ export default function FundComparisonPage() {
   const [allFunds, setAllFunds] = useState<FundMeta[]>([]);
   const [fundData, setFundData] = useState<Record<string, FundNAVPoint[]>>({});
   const [fundPerformance, setFundPerformance] = useState<Record<string, FundPerformance>>({});
+  const [fundIndicators, setFundIndicators] = useState<Record<string, IndicatorData[]>>({});
+  const [enabledIndicators, setEnabledIndicators] = useState<Set<IndicatorId>>(new Set());
 
   // Load fund metadata once on mount
   useEffect(() => {
@@ -39,7 +58,10 @@ export default function FundComparisonPage() {
 
     Promise.all(
       selectedTickers.map((ticker) =>
-        api.getFundNAV(ticker, period).then((data) => ({ ticker, data })).catch(() => ({ ticker, data: [] as FundNAVPoint[] })),
+        api
+          .getFundNAV(ticker, period)
+          .then((data) => ({ ticker, data }))
+          .catch(() => ({ ticker, data: [] as FundNAVPoint[] })),
       ),
     ).then((results) => {
       if (controller.signal.aborted) return;
@@ -50,6 +72,33 @@ export default function FundComparisonPage() {
 
     return () => controller.abort();
     // selectedTickers is a derived array — join it to get a stable dep value
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTickers.join(","), period]);
+
+  // Fetch indicator data for each selected ticker when tickers or period changes
+  useEffect(() => {
+    if (selectedTickers.length === 0) {
+      setFundIndicators({});
+      return;
+    }
+
+    const controller = new AbortController();
+
+    Promise.all(
+      selectedTickers.map((ticker) =>
+        api
+          .getFundIndicators(ticker, period)
+          .then((data) => ({ ticker, data }))
+          .catch(() => ({ ticker, data: [] as IndicatorData[] })),
+      ),
+    ).then((results) => {
+      if (controller.signal.aborted) return;
+      const map: Record<string, IndicatorData[]> = {};
+      for (const { ticker, data } of results) map[ticker] = data;
+      setFundIndicators(map);
+    });
+
+    return () => controller.abort();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTickers.join(","), period]);
 
@@ -64,7 +113,10 @@ export default function FundComparisonPage() {
 
     Promise.all(
       selectedTickers.map((ticker) =>
-        api.getFundPerformance(ticker).then((perf) => ({ ticker, perf })).catch(() => null),
+        api
+          .getFundPerformance(ticker)
+          .then((perf) => ({ ticker, perf }))
+          .catch(() => null),
       ),
     ).then((results) => {
       if (controller.signal.aborted) return;
@@ -89,6 +141,15 @@ export default function FundComparisonPage() {
     setSearchParams({ tickers: next.join(",") });
   };
 
+  const handleToggleIndicator = (id: IndicatorId) => {
+    setEnabledIndicators((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
   // Build chart funds — only tickers with data
   const chartFunds = selectedTickers
     .map((ticker) => {
@@ -100,6 +161,12 @@ export default function FundComparisonPage() {
       };
     })
     .filter((f) => f.data.length > 0);
+
+  // Build fund color map — matches NAV line colors by position in selectedTickers
+  const fundColors: Record<string, string> = {};
+  selectedTickers.forEach((ticker, i) => {
+    fundColors[ticker] = FUND_COLORS[i % FUND_COLORS.length];
+  });
 
   // Build table funds — only tickers with performance data
   const tableFunds = selectedTickers
@@ -113,7 +180,10 @@ export default function FundComparisonPage() {
         performance,
       };
     })
-    .filter((f): f is { ticker: string; name: string; performance: FundPerformance } => f !== null);
+    .filter(
+      (f): f is { ticker: string; name: string; performance: FundPerformance } =>
+        f !== null,
+    );
 
   const hasEnoughFunds = selectedTickers.length >= 2;
 
@@ -139,14 +209,24 @@ export default function FundComparisonPage() {
       </div>
 
       {!hasEnoughFunds ? (
-        <p className="fund-comparison__empty">
-          {t("funds.noFundsSelected")}
-        </p>
+        <p className="fund-comparison__empty">{t("funds.noFundsSelected")}</p>
       ) : (
         <>
           {chartFunds.length >= 2 && (
             <section className="fund-comparison__chart-section">
-              <ComparisonChart funds={chartFunds} />
+              <ComparisonChart
+                funds={chartFunds}
+                indicators={fundIndicators}
+                enabledIndicators={enabledIndicators}
+                fundColors={fundColors}
+              />
+              <div className="fund-comparison__indicator-panel">
+                <IndicatorPanel
+                  indicators={comparisonMetas}
+                  enabled={enabledIndicators}
+                  onToggle={handleToggleIndicator}
+                />
+              </div>
             </section>
           )}
 

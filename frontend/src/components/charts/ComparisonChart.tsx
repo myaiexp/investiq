@@ -1,13 +1,14 @@
 import { useEffect } from "react";
 import { LineSeries } from "lightweight-charts";
 import type { UTCTimestamp } from "lightweight-charts";
-import type { FundNAVPoint } from "../../types/index.ts";
+import type { IndicatorId, IndicatorData, FundNAVPoint } from "../../types/index.ts";
 import { useChart } from "./useChart.ts";
+import { useComparisonIndicators } from "./useComparisonIndicators.ts";
 import "./ComparisonChart.css";
 
-const FUND_COLORS = ["#3b82f6", "#22c55e", "#f59e0b", "#ef4444", "#8b5cf6"];
+export const FUND_COLORS = ["#3b82f6", "#22c55e", "#f59e0b", "#ef4444", "#8b5cf6"];
 
-interface ComparisonChartFund {
+export interface ComparisonChartFund {
   ticker: string;
   name: string;
   data: FundNAVPoint[];
@@ -15,10 +16,25 @@ interface ComparisonChartFund {
 
 interface ComparisonChartProps {
   funds: ComparisonChartFund[];
+  indicators?: Record<string, IndicatorData[]>;
+  enabledIndicators?: Set<IndicatorId>;
+  fundColors?: Record<string, string>;
 }
 
-export default function ComparisonChart({ funds }: ComparisonChartProps) {
+export default function ComparisonChart({
+  funds,
+  indicators = {},
+  enabledIndicators = new Set(),
+  fundColors = {},
+}: ComparisonChartProps) {
   const { chartRef, containerRef } = useChart();
+
+  useComparisonIndicators(
+    chartRef.current,
+    indicators,
+    enabledIndicators,
+    fundColors,
+  );
 
   useEffect(() => {
     const chart = chartRef.current;

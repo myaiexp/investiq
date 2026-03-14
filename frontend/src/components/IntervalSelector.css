@@ -49,55 +49,28 @@
   cursor: not-allowed;
 }
 
-/* Tier 2: Extra intervals dropdown */
-.interval-selector__extra {
-  padding: 0.375rem 0.5rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--text-secondary);
-  font-family: var(--font-mono);
-  font-size: 0.75rem;
-  cursor: pointer;
-  transition:
-    background 0.15s,
-    color 0.15s,
-    border-color 0.15s;
-  appearance: none;
-  -webkit-appearance: none;
-  /* Dropdown arrow via inline SVG */
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='%2394a3b8'%3E%3Cpath d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 0.4rem center;
-  padding-right: 1.4rem;
+/* Separator between standard and extra buttons */
+.interval-selector__sep {
+  width: 1px;
+  height: 1.25rem;
+  background: var(--border);
+  opacity: 0.5;
 }
 
-.interval-selector__extra:hover {
-  background-color: var(--bg-hover);
-  color: var(--text-primary);
+/* Extra interval buttons — slightly muted until active */
+.interval-selector__btn--extra {
+  opacity: 0.7;
 }
 
-.interval-selector__extra--active {
-  background-color: var(--accent);
-  border-color: var(--accent);
-  color: #fff;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='%23ffffff'%3E%3Cpath d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
+.interval-selector__btn--extra:hover {
+  opacity: 1;
 }
 
-.interval-selector__extra--active:hover {
-  background-color: var(--accent-hover);
+.interval-selector__btn--extra.interval-selector__btn--active {
+  opacity: 1;
 }
 
-.interval-selector__extra option {
-  background: #0f172a;
-  color: var(--text-secondary);
-}
-
-.interval-selector__extra option:disabled {
-  opacity: 0.4;
-}
-
-/* Tier 3: Free-form custom input */
+/* Free-form custom input */
 .interval-selector__custom {
   position: relative;
   display: flex;

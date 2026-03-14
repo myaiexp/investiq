@@ -50,11 +50,17 @@ export default function IndexDetailPage() {
   // Load OHLCV + indicators when period/interval changes
   useEffect(() => {
     if (!ticker) return;
-    api.getOHLCV(ticker, period, interval).then((res) => {
-      setOhlcv(res.bars);
-      setDataTransitionTimestamp(res.dataTransitionTimestamp ?? null);
-    });
-    api.getIndicators(ticker, period, interval).then(setIndicators);
+    api
+      .getOHLCV(ticker, period, interval)
+      .then((res) => {
+        setOhlcv(res.bars);
+        setDataTransitionTimestamp(res.dataTransitionTimestamp ?? null);
+      })
+      .catch(() => {
+        setOhlcv([]);
+        setDataTransitionTimestamp(null);
+      });
+    api.getIndicators(ticker, period, interval).then(setIndicators).catch(() => setIndicators([]));
   }, [ticker, period, interval]);
 
   // When period changes, reset interval to default if current preset isn't available.

@@ -10,21 +10,8 @@ Three-level progressive disclosure, all 10 indicators with chart rendering, dark
 **Phase 2 — Backend Pipeline & Real Data** ✅ Deployed
 yfinance fetching (10 indices + 6 funds), pandas-ta indicator calculations, PostgreSQL storage, APScheduler hourly refresh, FastAPI endpoints, VPS deployment at mase.fi/investiq. Includes: OMXS30 ticker fix (`^OMX`), display name clarifications (URTH, OBX TR), fund return calculation fix (calendar years), data quality notes API (`dataNote`/`dataNotes` fields).
 
----
-
-## Phase 3 — Data Completeness & Source Diversification
-
-**Priority: HIGH** — UI features show empty/wrong results. Some gaps are yfinance-specific and need alternative sources.
-
-| Task | Spec Reference | Current State |
-| --- | --- | --- |
-| Data source research for specific gaps | §4, §5 | yfinance can't deliver everything: wrong Euro Bond NAV, missing Balanced fund, no Bloomberg benchmark tickers. Evaluate Twelve Data, Finnhub, Nordnet, ÅAB website, Morningstar direct. |
-| Populate sub-daily OHLCV data | §5 "Reaaliaikadata" | Full PERIOD_INTERVAL_MAP defined in scheduler but only 1y/1D is fetched. UI interval selectors return empty for everything else. |
-| Fix Euro Bond A NAV | §4 fund metrics | Shows ~16€ vs real ~37€. Morningstar ticker returns wrong share class. Flagged with dataNote but unfixed. |
-| Add ÅAB Balanced fund | §4 "ÅAB Balanced — Yhdistelmärahasto" | Missing entirely. Not found on Yahoo Finance. May need Nordnet or ÅAB website as source. |
-| Fix Europe fund benchmark | §4 "Benchmark: MSCI Europe" | Currently EURO STOXX 50 (`^STOXX50E`). Spec says MSCI Europe. Need MSCI Europe ETF proxy. |
-| Bond fund benchmarks | §4 fund analysis | Euro Bond A and Green Bond ESG C have NULL benchmarks — Bloomberg Euro Aggregate / Green Bond tickers not available free. Flagged in API. |
-| Add currency labels | General UX | No currency field in Index model or API. Each index priced in native currency but unlabeled. |
+**Phase 3 — Data Completeness & Source Diversification** ✅ Deployed
+Schema migration (Date→DateTime for intraday), 1m candle pipeline with aggregation to all standard intervals, backfill CLI (254K rows), Euro Bond B ticker swap, 3 new benchmarks (IEUR, SYBA.DE, GRON.DE), Varainhoito B fund, currency labels, three-tier interval selector (presets + dropdown + custom input), OHLCVResponse wrapper, data transition marker on charts.
 
 ---
 
@@ -87,9 +74,8 @@ yfinance fetching (10 indices + 6 funds), pandas-ta indicator calculations, Post
 ## Priority Summary
 
 ```
-NOW   (Phase 3)  ━━━━━━━━━━━━━━━━━  Data completeness + source diversification
-NEXT  (Phase 4)  ━━━━━━━━━━━━━━━━━  Fund analysis depth — core spec features
-THEN  (Phase 5)  ━━━━━━━━━━━━━━━    Real-time streaming
-LATER (Phase 6)  ━━━━━━━━━━━━━      Swedish + mobile polish
-MAYBE (Phase 7-8)━━━━━━━━           Auth, notifications, ML
+NOW   (Phase 4)  ━━━━━━━━━━━━━━━━━  Fund analysis depth — core spec features
+NEXT  (Phase 5)  ━━━━━━━━━━━━━━━    Real-time streaming
+THEN  (Phase 6)  ━━━━━━━━━━━━━      Swedish + mobile polish
+LATER (Phase 7-8)━━━━━━━━           Auth, notifications, ML
 ```

@@ -26,10 +26,13 @@ interface IntervalSelectorProps {
 }
 
 /**
- * Three-tier interval selector:
- * 1. Standard preset buttons (5m, 15m, 1H, 4H, 1D, 1W)
- * 2. Dropdown for extra intervals (2H, 8H, 3D, 2W)
- * 3. Free-form text input for custom intervals
+ * Two-tier interval selector:
+ * 1. Buttons for standard presets + extras (5m…1W + 2H, 8H, 3D, 2W)
+ * 2. Free-form text input for custom intervals
+ *
+ * Standard presets are gated by PERIOD_INTERVAL_MAP (greyed out if the period
+ * is too short). Extras are always enabled — the backend validates and rejects
+ * intervals that produce too few candles.
  */
 export default function IntervalSelector({
   period,
@@ -42,14 +45,6 @@ export default function IntervalSelector({
   const [customError, setCustomError] = useState("");
 
   const isCustomValue = !ALL_KNOWN.has(value);
-  const isExtraActive = EXTRA_INTERVALS.includes(value);
-
-  const handleExtraChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selected = e.target.value;
-    if (selected) {
-      onChange(selected);
-    }
-  };
 
   const submitCustom = (raw: string) => {
     const trimmed = raw.trim();
@@ -79,7 +74,7 @@ export default function IntervalSelector({
 
   return (
     <div className="interval-selector">
-      {/* Tier 1: Standard preset buttons */}
+      {/* Standard preset buttons */}
       <div className="interval-selector__presets" role="radiogroup">
         {PRESET_INTERVALS.map((interval) => {
           const isAvailable = available.has(interval);
@@ -99,29 +94,28 @@ export default function IntervalSelector({
             </button>
           );
         })}
-      </div>
 
-      {/* Tier 2: Extra intervals dropdown */}
-      <select
-        className={`interval-selector__extra${isExtraActive ? " interval-selector__extra--active" : ""}`}
-        value={isExtraActive ? value : ""}
-        onChange={handleExtraChange}
-        aria-label="Extra intervals"
-      >
-        <option value="" disabled>
-          More…
-        </option>
+        {/* Separator */}
+        <span className="interval-selector__sep" aria-hidden="true" />
+
+        {/* Extra interval buttons — always enabled */}
         {EXTRA_INTERVALS.map((interval) => {
-          const isAvailable = available.has(interval);
+          const isActive = interval === value;
           return (
-            <option key={interval} value={interval} disabled={!isAvailable}>
-              {interval}{!isAvailable ? " ✗" : ""}
-            </option>
+            <button
+              key={interval}
+              className={`interval-selector__btn interval-selector__btn--extra${isActive ? " interval-selector__btn--active" : ""}`}
+              onClick={() => onChange(interval)}
+              role="radio"
+              aria-checked={isActive}
+            >
+              {interval}
+            </button>
           );
         })}
-      </select>
+      </div>
 
-      {/* Tier 3: Free-form custom input */}
+      {/* Free-form custom input */}
       <div className="interval-selector__custom">
         <input
           type="text"

@@ -242,7 +242,8 @@ async def get_ohlcv(
                 )
                 backfill_rows = result.scalars().all()
                 if backfill_rows:
-                    all_bars.extend(_rows_to_bar_dicts(backfill_rows))
+                    raw = _rows_to_bar_dicts(backfill_rows)
+                    all_bars.extend(aggregate_candles(raw, interval))
                     break
 
     # Part B: Aggregate 1m data within the date range

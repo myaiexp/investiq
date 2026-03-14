@@ -71,7 +71,13 @@
     "fund": "Rahasto",
     "relativePerformance": "Suhteellinen tuotto",
     "compare": "Vertaa",
-    "compareSelected": "Vertaa valittuja ({{count}})"
+    "compareSelected": "Vertaa valittuja ({{count}})",
+    "comparisonTitle": "Rahastojen vertailu",
+    "addFund": "Lisää rahasto",
+    "removeFund": "Poista",
+    "maxFundsReached": "Maksimi {{max}} rahastoa",
+    "noFundsSelected": "Valitse vähintään 2 rahastoa vertailuun",
+    "performanceComparison": "Tuottovertailu"
   },
   "updates": {
     "title": "Päivitykset",

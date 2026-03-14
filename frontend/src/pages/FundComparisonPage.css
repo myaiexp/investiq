@@ -1,0 +1,34 @@
+.fund-comparison {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.fund-comparison__header {
+  margin: var(--gap-lg) 0;
+}
+
+.fund-comparison__title {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.fund-comparison__controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-md);
+  margin-bottom: var(--gap-xl);
+}
+
+.fund-comparison__empty {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin-top: var(--gap-xl);
+}
+
+.fund-comparison__chart-section {
+  margin-bottom: var(--gap-xl);
+}
+
+.fund-comparison__table-section {
+  margin-bottom: var(--gap-xl);
+}

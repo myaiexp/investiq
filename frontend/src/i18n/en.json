@@ -71,7 +71,13 @@
     "fund": "Fund",
     "relativePerformance": "Relative Performance",
     "compare": "Compare",
-    "compareSelected": "Compare selected ({{count}})"
+    "compareSelected": "Compare selected ({{count}})",
+    "comparisonTitle": "Fund Comparison",
+    "addFund": "Add fund",
+    "removeFund": "Remove",
+    "maxFundsReached": "Maximum {{max}} funds",
+    "noFundsSelected": "Select at least 2 funds to compare",
+    "performanceComparison": "Performance Comparison"
   },
   "updates": {
     "title": "Updates",

@@ -7,6 +7,7 @@ import IndicesPage from "./pages/IndicesPage";
 import FundsPage from "./pages/FundsPage";
 import IndexDetailPage from "./pages/IndexDetailPage";
 import FundDetailPage from "./pages/FundDetailPage";
+import FundComparisonPage from "./pages/FundComparisonPage";
 import UpdateTracker from "./components/UpdateTracker";
 
 function App() {
@@ -40,6 +41,7 @@ function App() {
             <Route path="/" element={<IndicesPage />} />
             <Route path="/funds" element={<FundsPage />} />
             <Route path="/index/:ticker" element={<IndexDetailPage />} />
+            <Route path="/funds/compare" element={<FundComparisonPage />} />
             <Route path="/funds/:ticker" element={<FundDetailPage />} />
           </Routes>
         </main>

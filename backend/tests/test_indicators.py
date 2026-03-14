@@ -510,6 +510,20 @@ def test_aggregate_empty_returns_hold():
 # ---------------------------------------------------------------------------
 
 
+def test_proxy_ohlcv_produces_valid_fund_indicators():
+    """Proxy DataFrame (O=H=L=C=NAV, V=0) produces data for eligible indicators."""
+    import random
+    rng = random.Random(42)
+    nav_values = [100 + i * 0.1 + rng.uniform(-2, 2) for i in range(300)]
+    df = pd.DataFrame({
+        "Open": nav_values, "High": nav_values, "Low": nav_values,
+        "Close": nav_values, "Volume": [0] * 300,
+    }, index=pd.date_range("2025-01-01", periods=300, freq="B", tz="UTC"))
+    result = calculate_indicators(df)
+    for ind_id in ("rsi", "macd", "ma", "cci", "bollinger"):
+        assert any(len(pts) > 0 for pts in result[ind_id].values()), f"{ind_id} has no data"
+
+
 def test_end_to_end_signals(ohlcv_df: pd.DataFrame):
     """calculate_indicators → generate_signal for each → aggregate_signals produces valid result."""
     indicators = calculate_indicators(ohlcv_df)

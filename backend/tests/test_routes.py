@@ -234,6 +234,24 @@ SEED_FUND_NAV = [
     _make_fund_nav("0P00000N9Y.F", TODAY - timedelta(days=400), 38.0),  # outside 1y
 ]
 
+
+def _make_fund_nav_series(ticker: str, n: int = 400) -> list:
+    """Generate n daily FundNAV rows with a random-walk NAV for indicator testing."""
+    import random
+    rng = random.Random(42)
+    nav = 100.0
+    rows = []
+    for i in range(n):
+        d = TODAY - timedelta(days=n - i)
+        nav += rng.uniform(-1.5, 1.7)
+        nav = max(nav, 10.0)
+        rows.append(_make_fund_nav(ticker, d, round(nav, 4)))
+    return rows
+
+
+# Extended NAV data for indicator tests (300+ rows needed for lookback periods)
+SEED_FUND_NAV_EXTENDED = _make_fund_nav_series("0P00000N9R.F", 400)
+
 SEED_FUND_PERF = [
     _make_fund_performance("0P00000N9Y.F"),
 ]
@@ -246,7 +264,7 @@ def _build_session_data():
         IndicatorData: SEED_INDICATORS,
         SignalData: SEED_SIGNALS,
         Fund: SEED_FUNDS,
-        FundNAV: SEED_FUND_NAV,
+        FundNAV: SEED_FUND_NAV + SEED_FUND_NAV_EXTENDED,
         FundPerformance: SEED_FUND_PERF,
     }
 
@@ -451,3 +469,47 @@ async def test_camelcase_output(client):
     data = resp.json()
     assert "benchmarkReturns" in data
     assert "maxDrawdown" in data
+
+
+# ---------------------------------------------------------------------------
+# Fund indicator & signal routes
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_get_fund_indicators_returns_filtered_set(client):
+    """Only fund-eligible indicators (rsi, macd, ma, cci, bollinger) are returned."""
+    resp = await client.get("/api/funds/0P00000N9R.F/indicators?period=5y")
+    assert resp.status_code == 200
+    data = resp.json()
+    ids = {item["id"] for item in data}
+    assert ids <= {"rsi", "macd", "ma", "cci", "bollinger"}
+    assert "stochastic" not in ids
+    assert "fibonacci" not in ids
+
+
+@pytest.mark.asyncio
+async def test_get_fund_indicators_404_unknown(client):
+    """Requesting indicators for unknown fund returns 404."""
+    resp = await client.get("/api/funds/NONEXISTENT/indicators")
+    assert resp.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_get_fund_signal_returns_aggregate(client):
+    """Signal endpoint returns aggregate + breakdown with fund-eligible indicators only."""
+    resp = await client.get("/api/funds/0P00000N9R.F/signal")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["aggregate"] in ("buy", "sell", "hold")
+    assert "breakdown" in data
+    assert "activeCount" in data
+    for item in data["breakdown"]:
+        assert item["id"] in ("rsi", "macd", "ma", "cci", "bollinger")
+
+
+@pytest.mark.asyncio
+async def test_get_fund_signal_404_unknown(client):
+    """Requesting signal for unknown fund returns 404."""
+    resp = await client.get("/api/funds/NONEXISTENT/signal")
+    assert resp.status_code == 404

@@ -36,6 +36,14 @@
   gap: var(--gap-md);
   margin-bottom: var(--gap-lg);
   flex-wrap: wrap;
+  align-items: center;
+}
+
+.index-detail__controls-sep {
+  width: 1px;
+  height: 1.5rem;
+  background: var(--border);
+  opacity: 0.5;
 }
 
 .index-detail__layout {

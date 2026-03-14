@@ -144,6 +144,7 @@ export default function IndexDetailPage() {
 
       <div className="index-detail__controls">
         <PeriodSelector value={period} onChange={handlePeriodChange} />
+        <span className="index-detail__controls-sep" aria-hidden="true" />
         <IntervalSelector
           period={period}
           value={interval}

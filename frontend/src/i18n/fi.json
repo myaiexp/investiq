@@ -79,6 +79,8 @@
     "uiFixDesc": "Korttien asettelu uusittu, kaaviot normalisoitu vertailukelpoisiksi ja mobiilituki parannettu.",
     "realData": "Reaaliaikainen markkinadata",
     "realDataDesc": "Dashboard käyttää nyt oikeaa markkinadataa. Indeksien hinnat, tekniset indikaattorit ja signaalit päivittyvät automaattisesti. Rahastojen NAV-arvot ja tuottotiedot haetaan suoraan markkinoilta. Joitakin virheitä korjataan vielä.",
+    "customIntervals": "Vapaavalintaiset aikavälit",
+    "customIntervalsDesc": "Kynttilöiden aikavälin voi nyt valita vapaasti (esim. 2H, 8H, 3D). Historiadata yhdistetään automaattisesti — katkoviiva kaaviossa näyttää missä datan tarkkuus muuttuu.",
     "systemLaunch": "Järjestelmä käynnistetty",
     "systemLaunchDesc": "InvestIQ-analyysidashboard on nyt käytössä."
   }

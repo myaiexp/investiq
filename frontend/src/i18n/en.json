@@ -79,6 +79,8 @@
     "uiFixDesc": "Redesigned card layouts, normalized fund charts for comparison, and improved mobile responsiveness.",
     "realData": "Live Market Data",
     "realDataDesc": "The dashboard now uses real market data. Index prices, technical indicators, and signals update automatically. Fund NAV values and returns are fetched directly from the markets. Some bugs are still being fixed.",
+    "customIntervals": "Custom Timeframes",
+    "customIntervalsDesc": "Candlestick intervals can now be freely chosen (e.g. 2H, 8H, 3D). Historical data is stitched automatically — a dashed line on the chart shows where data resolution changes.",
     "systemLaunch": "System Launch",
     "systemLaunchDesc": "InvestIQ analysis dashboard is now live."
   }

@@ -1,5 +1,12 @@
 [
   {
+    "id": 5,
+    "date": "2026-03-14",
+    "category": "feature",
+    "titleKey": "updates.customIntervals",
+    "descriptionKey": "updates.customIntervalsDesc"
+  },
+  {
     "id": 4,
     "date": "2026-03-12",
     "category": "feature",

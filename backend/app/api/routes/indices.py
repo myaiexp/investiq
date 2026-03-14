@@ -41,7 +41,8 @@ PERIOD_DAYS: dict[str, int] = {
 }
 
 # Pre-aggregated intervals stored in ohlcv_data (from backfill + scheduler)
-STANDARD_INTERVALS = {"1m", "5m", "15m", "1H", "4H", "1D", "1W"}
+# 1m excluded: only ~7 days retention, needs hybrid stitching for longer periods
+STANDARD_INTERVALS = {"5m", "15m", "1H", "4H", "1D", "1W"}
 
 # Nearest standard interval for backfill stitching (smallest to largest)
 _BACKFILL_PREFERENCE = ["5m", "15m", "1H", "4H", "1D", "1W"]

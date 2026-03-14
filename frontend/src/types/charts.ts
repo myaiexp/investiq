@@ -53,5 +53,3 @@ export const PERIOD_INTERVAL_MAP: Record<Period, PeriodConfig> = {
   },
 };
 
-/** Extra intervals shown in the dropdown (beyond standard presets). */
-export const EXTRA_INTERVALS: string[] = ["2H", "8H", "3D", "2W"];

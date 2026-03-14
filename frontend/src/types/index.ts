@@ -20,4 +20,4 @@ export type {
 
 export type { Period, Interval, PeriodConfig } from "./charts.ts";
 
-export { PERIOD_INTERVAL_MAP, EXTRA_INTERVALS } from "./charts.ts";
+export { PERIOD_INTERVAL_MAP } from "./charts.ts";

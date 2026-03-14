@@ -49,27 +49,6 @@
   cursor: not-allowed;
 }
 
-/* Separator between standard and extra buttons */
-.interval-selector__sep {
-  width: 1px;
-  height: 1.25rem;
-  background: var(--border);
-  opacity: 0.5;
-}
-
-/* Extra interval buttons — slightly muted until active */
-.interval-selector__btn--extra {
-  opacity: 0.7;
-}
-
-.interval-selector__btn--extra:hover {
-  opacity: 1;
-}
-
-.interval-selector__btn--extra.interval-selector__btn--active {
-  opacity: 1;
-}
-
 /* Free-form custom input */
 .interval-selector__custom {
   position: relative;

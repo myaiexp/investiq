@@ -69,7 +69,9 @@
     "return3y": "3v tuotto",
     "return5y": "5v tuotto",
     "fund": "Rahasto",
-    "relativePerformance": "Suhteellinen tuotto"
+    "relativePerformance": "Suhteellinen tuotto",
+    "compare": "Vertaa",
+    "compareSelected": "Vertaa valittuja ({{count}})"
   },
   "updates": {
     "title": "Päivitykset",

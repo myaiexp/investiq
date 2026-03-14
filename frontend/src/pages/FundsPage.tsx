@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import type { FundMeta, FundNAVPoint } from "../types/index.ts";
 import { api } from "../api/client.ts";
 import CardGrid from "../components/CardGrid.tsx";
@@ -11,9 +12,11 @@ import "./FundsPage.css";
 
 export default function FundsPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [funds, setFunds] = useState<FundMeta[]>([]);
   const [expandedTicker, setExpandedTicker] = useState<string | null>(null);
   const [sparklines, setSparklines] = useState<Record<string, FundNAVPoint[]>>({});
+  const [selectedForCompare, setSelectedForCompare] = useState<Set<string>>(new Set());
   const fetchedSparklines = useRef<Set<string>>(new Set());
 
   useEffect(() => {
@@ -35,8 +38,27 @@ export default function FundsPage() {
     setExpandedTicker(expandedTicker === ticker ? null : ticker);
   };
 
+  const handleCompareToggle = (ticker: string) => (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedForCompare((prev) => {
+      const next = new Set(prev);
+      if (next.has(ticker)) {
+        next.delete(ticker);
+      } else {
+        next.add(ticker);
+      }
+      return next;
+    });
+  };
+
+  const handleCompareNavigate = () => {
+    const tickers = [...selectedForCompare].join(",");
+    navigate(`/funds/compare?tickers=${tickers}`);
+  };
+
   const equityFunds = funds.filter((f) => f.fundType === "equity");
   const bondFunds = funds.filter((f) => f.fundType === "bond");
+  const balancedFunds = funds.filter((f) => f.fundType === "balanced");
 
   const getSparklineData = (ticker: string) => {
     const points = sparklines[ticker] ?? [];
@@ -59,6 +81,8 @@ export default function FundsPage() {
                   fund={fund}
                   sparklineData={getSparklineData(fund.ticker)}
                   expanded={expandedTicker === fund.ticker}
+                  compareSelected={selectedForCompare.has(fund.ticker)}
+                  onCompareToggle={handleCompareToggle(fund.ticker)}
                 />
               }
               expandedContent={<FundExpandedPanel fund={fund} />}
@@ -74,6 +98,14 @@ export default function FundsPage() {
       <h2 className="funds-page__title">{t("nav.funds")}</h2>
       {renderGroup(t("group.equity"), equityFunds)}
       {renderGroup(t("group.bond"), bondFunds)}
+      {renderGroup(t("group.balanced"), balancedFunds)}
+      {selectedForCompare.size >= 2 && (
+        <div className="funds-page__compare-bar">
+          <button className="funds-page__compare-btn" onClick={handleCompareNavigate}>
+            {t("funds.compareSelected", { count: selectedForCompare.size })}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -69,7 +69,9 @@
     "return3y": "3Y Return",
     "return5y": "5Y Return",
     "fund": "Fund",
-    "relativePerformance": "Relative Performance"
+    "relativePerformance": "Relative Performance",
+    "compare": "Compare",
+    "compareSelected": "Compare selected ({{count}})"
   },
   "updates": {
     "title": "Updates",

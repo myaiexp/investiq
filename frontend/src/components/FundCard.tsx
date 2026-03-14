@@ -8,9 +8,11 @@ interface FundCardProps {
   fund: FundMeta;
   sparklineData: { time: number; value: number }[];
   expanded?: boolean;
+  compareSelected?: boolean;
+  onCompareToggle?: (e: React.MouseEvent) => void;
 }
 
-export default function FundCard({ fund, sparklineData, expanded }: FundCardProps) {
+export default function FundCard({ fund, sparklineData, expanded, compareSelected, onCompareToggle }: FundCardProps) {
   return (
     <div className="fund-card">
       <div className="fund-card__top">
@@ -21,6 +23,16 @@ export default function FundCard({ fund, sparklineData, expanded }: FundCardProp
           )}
         </span>
         <TypeBadge fundType={fund.fundType} />
+        {onCompareToggle !== undefined && (
+          <input
+            type="checkbox"
+            className="fund-card__compare-checkbox"
+            checked={compareSelected ?? false}
+            onClick={onCompareToggle}
+            onChange={() => {}}
+            aria-label="Select for comparison"
+          />
+        )}
       </div>
       <div className="fund-card__mid">
         <div className="fund-card__price">

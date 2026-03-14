@@ -7,3 +7,42 @@
 .funds-page__group {
   margin-bottom: var(--gap-xl);
 }
+
+.funds-page__compare-bar {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  animation: compare-bar-in 0.2s ease-out;
+}
+
+@keyframes compare-bar-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.funds-page__compare-btn {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 24px;
+  padding: 10px 24px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
+  white-space: nowrap;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+
+.funds-page__compare-btn:hover {
+  background: var(--accent-hover, #2563eb);
+  box-shadow: 0 4px 20px rgba(59, 130, 246, 0.55);
+}

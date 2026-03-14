@@ -90,6 +90,8 @@
     "customIntervals": "Vapaavalintaiset aikavälit",
     "customIntervalsDesc": "Kynttilöiden aikavälin voi nyt valita vapaasti (esim. 2H, 8H, 3D). Historiadata yhdistetään automaattisesti — katkoviiva kaaviossa näyttää missä datan tarkkuus muuttuu.",
     "systemLaunch": "Järjestelmä käynnistetty",
-    "systemLaunchDesc": "InvestIQ-analyysidashboard on nyt käytössä."
+    "systemLaunchDesc": "InvestIQ-analyysidashboard on nyt käytössä.",
+    "fundAnalysis": "Rahastojen tekninen analyysi",
+    "fundAnalysisDesc": "Rahastoille on nyt saatavilla tekniset indikaattorit (RSI, MACD, MA, CCI, Bollinger) ja signaalit. Lisäksi rahastoja voi vertailla rinnakkain normalisoidulla tuottokaaviolla ja tunnuslukutaulukolla."
   }
 }

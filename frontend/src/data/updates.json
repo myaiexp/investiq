@@ -1,5 +1,12 @@
 [
   {
+    "id": 6,
+    "date": "2026-03-14",
+    "category": "feature",
+    "titleKey": "updates.fundAnalysis",
+    "descriptionKey": "updates.fundAnalysisDesc"
+  },
+  {
     "id": 5,
     "date": "2026-03-14",
     "category": "feature",

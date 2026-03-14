@@ -90,6 +90,8 @@
     "customIntervals": "Custom Timeframes",
     "customIntervalsDesc": "Candlestick intervals can now be freely chosen (e.g. 2H, 8H, 3D). Historical data is stitched automatically — a dashed line on the chart shows where data resolution changes.",
     "systemLaunch": "System Launch",
-    "systemLaunchDesc": "InvestIQ analysis dashboard is now live."
+    "systemLaunchDesc": "InvestIQ analysis dashboard is now live.",
+    "fundAnalysis": "Fund Technical Analysis",
+    "fundAnalysisDesc": "Funds now have technical indicators (RSI, MACD, MA, CCI, Bollinger) and signals. You can also compare funds side by side with a normalized performance chart and metrics table."
   }
 }
